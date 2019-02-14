@@ -1,0 +1,10 @@
+django
+djangorestframework
+django-rest-swagger
+dj-database-url
+gunicorn
+postgres
+psycopg2
+pytz
+whitenoise
+django-heroku
