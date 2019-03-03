@@ -1,6 +1,6 @@
 from rest_framework import routers
 from django.conf.urls import url
-from hello.fn_views import sayhello
+from hello.fn_views import getRedirectUrl, getAccessToken
 
 # To add a new path, first import the app:
 # import blog
@@ -11,7 +11,8 @@ from hello.fn_views import sayhello
 # Learn more here: https://docs.djangoproject.com/en/2.1/topics/http/urls/
 router = routers.DefaultRouter()
 urlpatterns = [
-    url("sayhello/", sayhello),
+    url("redirecturl/", getRedirectUrl),
+    url("accesstoken/", getAccessToken),
 ]
 
 urlpatterns += router.urls

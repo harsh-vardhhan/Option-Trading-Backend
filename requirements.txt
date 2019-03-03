@@ -8,3 +8,4 @@ psycopg2
 pytz
 whitenoise
 django-heroku
+upstox
