@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.views import Response
 from upstox_api.api import Session, Upstox
 import json
+from hello.models import Option
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 
@@ -33,6 +34,16 @@ def getMasterContract(request):
     upstox = Upstox(api_key, accessTokenData['accessToken'])
     upstox.get_master_contract('NSE_FO')
     optionSearch = upstox.search_instruments('NSE_FO', 'reliance19may')
-    option = optionSearch[0]
-    strikePrice = option[7]
-    return Response({"NSE_FO": optionSearch})
+    opsList = []
+    for ops in optionSearch:
+        opsList.append(Option(
+            ops[0], ops[1], ops[2], ops[3], ops[4],
+            ops[5], ops[6], ops[7], ops[8], ops[9],
+            ops[10], ops[11]
+        ))
+
+    def obj_dict(obj):
+        return obj.__dict__
+    opsdump = json.dumps(opsList, default=obj_dict)
+    opsload = json.loads(opsdump)
+    return Response({"NSE_FO": opsload})
