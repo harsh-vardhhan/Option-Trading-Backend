@@ -35,4 +35,4 @@ def getMasterContract(request):
     optionSearch = upstox.search_instruments('NSE_FO', 'reliance19may')
     option = optionSearch[0]
     strikePrice = option[7]
-    return Response({"NSE_FO": optionSearch})
+    return Response({"NSE_FO": option})
