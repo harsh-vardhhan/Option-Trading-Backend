@@ -1,5 +1,5 @@
 """
-WSGI config for gettingstarted project.
+WSGI config for upstox_server project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 
@@ -9,7 +9,7 @@ https://docs.djangoproject.com/en/2.1/howto/deployment/wsgi/
 
 import os
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gettingstarted.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "upstox_server.settings")
 
 from django.core.wsgi import get_wsgi_application
 

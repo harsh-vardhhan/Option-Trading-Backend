@@ -3,7 +3,7 @@ from rest_framework.views import Response
 from upstox_api.api import Session, Upstox
 import json
 import itertools as it
-from hello.models import Option
+from app.models import Option
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 
