@@ -2,6 +2,7 @@ from rest_framework.decorators import api_view
 from rest_framework.views import Response
 from upstox_api.api import Session, Upstox
 import json
+import itertools as it
 from hello.models import Option
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
@@ -41,6 +42,9 @@ def getMasterContract(request):
             ops[5], ops[6], ops[7], ops[8], ops[9],
             ops[10], ops[11]
         ))
+    for a, b in it.combinations(opsList, 2):
+        if (a.strike_price == b.strike_price):
+            print(a.symbol + b.symbol)
 
     def obj_dict(obj):
         return obj.__dict__
