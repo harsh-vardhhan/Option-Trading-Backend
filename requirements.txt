@@ -9,3 +9,4 @@ pytz
 whitenoise
 django-heroku
 upstox
+python-dateutil
