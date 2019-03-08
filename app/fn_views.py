@@ -34,20 +34,26 @@ def getMasterContract(request):
     accessTokenData = json.loads(accessToken)
     upstox = Upstox(api_key, accessTokenData['accessToken'])
     upstox.get_master_contract('NSE_FO')
-    optionSearch = upstox.search_instruments('NSE_FO', 'reliance19may')
-    opsList = []
+    optionSearch = upstox.search_instruments('NSE_FO', 'reliance19may')  
+    #Creating Python Objects of all options
+    allOptions = []
     for ops in optionSearch:
-        opsList.append(Option(
+        allOptions.append(Option(
             ops[0], ops[1], ops[2], ops[3], ops[4],
             ops[5], ops[6], ops[7], ops[8], ops[9],
             ops[10], ops[11]
         ))
-    for a, b in it.combinations(opsList, 2):
-        if (a.strike_price == b.strike_price):
-            print(a.symbol + b.symbol)
-
+    #saperating calls and puts
+    optionPairs = []
+    for a, b in it.combinations(allOptions, 2):
+        if (a.strike_price == b.strike_price):           
+            optionPair = (a, b)
+            optionPairs.append(optionPair)
+    #convert into Json format
     def obj_dict(obj):
         return obj.__dict__
-    opsdump = json.dumps(opsList, default=obj_dict)
-    opsload = json.loads(opsdump)
-    return Response({"NSE_FO": opsload})
+    options_dump = json.dumps(optionPairs, default=obj_dict)
+    options_load = json.loads(options_dump)
+    return Response({
+        "Options": options_load
+    })
