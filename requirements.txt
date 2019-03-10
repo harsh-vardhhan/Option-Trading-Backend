@@ -10,3 +10,4 @@ whitenoise
 django-heroku
 upstox
 python-dateutil
+corsheaders
