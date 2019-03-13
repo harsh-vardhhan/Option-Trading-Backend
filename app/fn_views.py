@@ -10,12 +10,13 @@ from dateutil import relativedelta
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
+secret_key = 'pqmnwsq8ja'
 
 @api_view()
 def getRedirectUrl(request):
-    s = Session('Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx')
+    s = Session(api_key)
     s.set_redirect_uri(redirect_uri)
-    s.set_api_secret('pqmnwsq8ja')
+    s.set_api_secret(secret_key)
     return Response({"url": s.get_login_url()})
 
 
@@ -25,7 +26,7 @@ def getAccessToken(request):
     requestCodeData = json.loads(requestCode)
     s = Session(api_key)
     s.set_redirect_uri(redirect_uri)
-    s.set_api_secret('pqmnwsq8ja')
+    s.set_api_secret(secret_key)
     s.set_code(requestCodeData['requestcode'])
     access_token = s.retrieve_access_token()
     return Response({"accessToken": access_token})
