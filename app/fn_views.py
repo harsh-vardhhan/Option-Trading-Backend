@@ -11,6 +11,8 @@ from dateutil import relativedelta
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
 secret_key = 'pqmnwsq8ja'
+master_contract_FO = 'NSE_FO'
+master_contract_EQ = 'NSE_EQ'
 
 @api_view()
 def get_redirect_url(request):
@@ -31,19 +33,29 @@ def get_access_token(request):
     access_token = session.retrieve_access_token()
     return Response({"accessToken": access_token})
 
+@api_view(['POST'])
+def search_symbol(request):
+    post_request = json.dumps(request.data)
+    post_request_data = json.loads(post_request)
+    upstox = Upstox(api_key, post_request_data['accessToken'])
+    def obj_dict(obj):
+        return obj.__dict__
+    search_list = upstox.search_instruments(master_contract_FO, post_request_data['searchSymbol'])
+    search_list_dump = json.dumps(search_list, default=obj_dict)
+    search_list_load = json.loads(search_list_dump)
+    return Response({"search": search_list_load})
+
 
 @api_view(['POST'])
 def get_master_contract(request):
     symbol = 'reliance'
-    master_contract_FO = 'NSE_FO'
-    master_contract_EQ = 'NSE_EQ'
     def create_session():
         access_token = json.dumps(request.data)
         access_token_data = json.loads(access_token)
         upstox = Upstox(api_key, access_token_data['accessToken'])
         return upstox
     def search_options():    
-        upstox = create_session()   
+        upstox = create_session()
         upstox.get_master_contract(master_contract_FO)
         option_search = upstox.search_instruments(master_contract_FO, symbol)
         return option_search

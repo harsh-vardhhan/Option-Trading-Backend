@@ -1,6 +1,6 @@
 from rest_framework import routers
 from django.conf.urls import url
-from app.fn_views import get_redirect_url, get_access_token, get_master_contract
+from app.fn_views import get_redirect_url, get_access_token, get_master_contract, search_symbol
 
 # To add a new path, first import the app:
 # import blog
@@ -14,6 +14,7 @@ urlpatterns = [
     url("redirecturl/", get_redirect_url),
     url("accesstoken/", get_access_token),
     url("mastercontract/", get_master_contract)
+    url("searchsymbol/", search_symbol)
 ]
 
 urlpatterns += router.urls
