@@ -4,10 +4,10 @@ django-rest-swagger
 dj-database-url
 gunicorn
 postgres
-psycopg2
+psycopg2-binary
 pytz
 whitenoise
 django-heroku
 upstox
 python-dateutil
-django-cors-headers 
+django-cors-headers

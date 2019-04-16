@@ -1,12 +1,13 @@
 from rest_framework.decorators import api_view
 from rest_framework.views import Response
-from upstox_api.api import Session, Upstox
+from upstox_api.api import Session, Upstox, LiveFeedType
 import json
 import itertools as it
 from app.models import Instrument
 from datetime import datetime
 import calendar
 from dateutil import relativedelta
+from time import sleep
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
@@ -40,12 +41,15 @@ def search_symbol(request):
     upstox = Upstox(api_key, post_request_data['accessToken'])
     def obj_dict(obj):
         return obj.__dict__
-    search_list = upstox.search_instruments(master_contract_FO, post_request_data['searchSymbol'])
+    upstox.get_master_contract(master_contract_FO)
+    search_list = upstox.search_instruments(
+        master_contract_FO,
+        post_request_data['searchSymbol'])
     search_list_dump = json.dumps(search_list, default=obj_dict)
     search_list_load = json.loads(search_list_dump)
     return Response({"search": search_list_load})
 
-
+# change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
 def get_master_contract(request):
     symbol = 'reliance'
@@ -54,7 +58,7 @@ def get_master_contract(request):
         access_token_data = json.loads(access_token)
         upstox = Upstox(api_key, access_token_data['accessToken'])
         return upstox
-    def search_options():    
+    def search_options():
         upstox = create_session()
         upstox.get_master_contract(master_contract_FO)
         option_search = upstox.search_instruments(master_contract_FO, symbol)
@@ -69,8 +73,8 @@ def get_master_contract(request):
                     equity[10], equity[11]
                 )
         return stock
-    def list_options():       
-        #Get First and Last Day of the Current Month/Week
+    def list_options():
+        # Get First and Last Day of the Current Month/Week
         def get_first_date():
             today = datetime.now().today() + relativedelta.relativedelta(weeks=1)
             first_day_date = datetime(today.year, today.month, 1).timestamp() * 1000
@@ -80,26 +84,71 @@ def get_master_contract(request):
             last_day = calendar.monthrange(today.year, today.month)[1]
             last_day_date = datetime(today.year, today.month, last_day).timestamp() * 1000
             return last_day_date
-        #Creating Python Objects of all options 
+        # Creating Python Objects of all options
         all_options = []
+        Instrument.objects.all().delete()
         for ops in search_options():
+            #upstox = create_session()
+            #upstox.get_master_contract(master_contract_FO)
             expiry = int(ops[6])
+
+            exchange_val = ops[0]
+            token_val = ops[1]
+            parent_token_val = ops[2]
+            symbol_val = ops[3]
+            name_val = ops[4]
+            closing_price_val = ops[5]
+            expiry_val = ops[6]
+            strike_price_val = ops[7]
+            tick_size_val = ops[8]
+            lot_size_val = ops[9]
+            instrument_type_val = ops[10]
+            isin_val = ops[11] 
             if expiry >= get_first_date() and expiry <= get_last_date():
+                
+                #option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+                #    master_contract_FO, ops[3]),
+                #    LiveFeedType.Full)
+                #sleep(1)
+
+                if ops[5] is None:
+                        closing_price_val = ''
+                if ops[11] is None:
+                        isin_val = ''
+                if ops[7] is None:
+                        strike_price_val = ''
+
+                Instrument(
+                    exchange = exchange_val, 
+                    token = token_val,
+                    parent_token = parent_token_val, 
+                    symbol = symbol_val, 
+                    name = name_val,
+                    closing_price = closing_price_val,
+                    expiry = expiry_val,
+                    strike_price = strike_price_val, 
+                    tick_size = tick_size_val, 
+                    lot_size = lot_size_val,
+                    instrument_type = instrument_type_val, 
+                    isin = isin_val
+                ).save()
+
                 all_options.append(Instrument(
                     ops[0], ops[1], ops[2], ops[3], ops[4],
                     ops[5], ops[6], ops[7], ops[8], ops[9],
                     ops[10], ops[11]
                 ))
         return all_options
-    #saperating calls and puts
+    # saperating calls and puts
+    # Saperate Full Quotes
     def pairing():
         option_pairs = []
         for a, b in it.combinations(list_options(), 2):
-            if (a.strike_price == b.strike_price):           
+            if (a.strike_price == b.strike_price):
                 option_pair = (a, b)
                 option_pairs.append(option_pair)
         return option_pairs
-    #convert into Json format
+    # convert into Json format
     def obj_dict(obj):
         return obj.__dict__
     def stock_to_json():
@@ -114,4 +163,3 @@ def get_master_contract(request):
         "Stock": stock_to_json(),
         "Options": option_to_json()
     })
-
