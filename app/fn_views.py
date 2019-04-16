@@ -14,6 +14,7 @@ redirect_uri = 'https://www.explainoid.com/home'
 secret_key = 'pqmnwsq8ja'
 master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
+symbol = 'reliance'
 
 @api_view()
 def get_redirect_url(request):
@@ -51,8 +52,7 @@ def search_symbol(request):
 
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
-def get_master_contract(request):
-    symbol = 'reliance'
+def save_option(request):
     def create_session():
         access_token = json.dumps(request.data)
         access_token_data = json.loads(access_token)
@@ -63,16 +63,6 @@ def get_master_contract(request):
         upstox.get_master_contract(master_contract_FO)
         option_search = upstox.search_instruments(master_contract_FO, symbol)
         return option_search
-    def search_equity():
-        upstox = create_session()
-        upstox.get_master_contract(master_contract_EQ)
-        equity = upstox.get_instrument_by_symbol(master_contract_EQ, symbol)
-        stock = Instrument(
-                    equity[0], equity[1], equity[2], equity[3], equity[4],
-                    equity[5], equity[6], equity[7], equity[8], equity[9],
-                    equity[10], equity[11]
-                )
-        return stock
     def list_options():
         # Get First and Last Day of the Current Month/Week
         def get_first_date():
@@ -88,10 +78,7 @@ def get_master_contract(request):
         all_options = []
         Instrument.objects.all().delete()
         for ops in search_options():
-            #upstox = create_session()
-            #upstox.get_master_contract(master_contract_FO)
             expiry = int(ops[6])
-
             exchange_val = ops[0]
             token_val = ops[1]
             parent_token_val = ops[2]
@@ -105,19 +92,12 @@ def get_master_contract(request):
             instrument_type_val = ops[10]
             isin_val = ops[11] 
             if expiry >= get_first_date() and expiry <= get_last_date():
-                
-                #option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-                #    master_contract_FO, ops[3]),
-                #    LiveFeedType.Full)
-                #sleep(1)
-
                 if ops[5] is None:
                         closing_price_val = ''
                 if ops[11] is None:
                         isin_val = ''
                 if ops[7] is None:
                         strike_price_val = ''
-
                 Instrument(
                     exchange = exchange_val, 
                     token = token_val,
@@ -132,18 +112,37 @@ def get_master_contract(request):
                     instrument_type = instrument_type_val, 
                     isin = isin_val
                 ).save()
-
                 all_options.append(Instrument(
                     ops[0], ops[1], ops[2], ops[3], ops[4],
                     ops[5], ops[6], ops[7], ops[8], ops[9],
                     ops[10], ops[11]
                 ))
         return all_options
+    return Response({"Message": "Options Saved"})
+
+@api_view(['POST'])
+def get_option_chain(request):
+    list_options = Instrument.objects.all()
+    def create_session():
+        access_token = json.dumps(request.data)
+        access_token_data = json.loads(access_token)
+        upstox = Upstox(api_key, access_token_data['accessToken'])
+        return upstox
+    def search_equity():
+        upstox = create_session()
+        upstox.get_master_contract(master_contract_EQ)
+        equity = upstox.get_instrument_by_symbol(master_contract_EQ, symbol)
+        stock = Instrument(
+                    equity[0], equity[1], equity[2], equity[3], equity[4],
+                    equity[5], equity[6], equity[7], equity[8], equity[9],
+                    equity[10], equity[11]
+                )
+        return stock
     # saperating calls and puts
     # Saperate Full Quotes
     def pairing():
         option_pairs = []
-        for a, b in it.combinations(list_options(), 2):
+        for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
                 option_pair = (a, b)
                 option_pairs.append(option_pair)
