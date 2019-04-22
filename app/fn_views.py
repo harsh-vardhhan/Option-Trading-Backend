@@ -120,8 +120,9 @@ def save_option(request):
         return all_options
     return Response({"Message": "Options Saved"})
 
+# separate chaining into different function
 @api_view(['POST'])
-def get_option_chain(request):
+def get_option(request):
     list_options = Instrument.objects.all()
     def create_session():
         access_token = json.dumps(request.data)
@@ -162,3 +163,22 @@ def get_option_chain(request):
         "Stock": stock_to_json(),
         "Options": option_to_json()
     })
+
+# save quotes in database
+@api_view(['POST'])
+def save_full_quotes(request):
+    list_options = Instrument.objects.all()
+    def create_session():
+        access_token = json.dumps(request.data)
+        access_token_data = json.loads(access_token)
+        upstox = Upstox(api_key, access_token_data['accessToken'])
+        return upstox
+    upstox = create_session()
+    upstox.get_master_contract(master_contract_FO)
+    for ops in list_options:
+        option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+            master_contract_FO, ops.symbol),
+            LiveFeedType.Full)
+        sleep(1)
+        print(option)
+    return Response({"Message": "Quotes Saved"})
