@@ -1,12 +1,10 @@
 from channels.consumer import AsyncConsumer
 
 
-class StockConsumer(AsyncConsumer):
+class stock_consumer(AsyncConsumer):
      async def websocket_connect(self, event):
+        print('Hiiiiii')
         print("connected", event)
-        await self.send({
-           "type": "websocket.accept"
-        })
 
      async def websocket_receive(self, event):
         print("receive", event)

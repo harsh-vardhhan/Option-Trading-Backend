@@ -33,17 +33,16 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
+    "channels",
+    "app",
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
-    "app",
     'rest_framework',
-    'rest_framework_swagger',
-    'corsheaders',
-    'channels'
+    'rest_framework_swagger'
 ]
 
 MIDDLEWARE = [
@@ -91,7 +90,7 @@ CHANNEL_LAYERS = {
         # This example app uses the Redis channel layer implementation channels_redis
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [(redis_host, 6379)],
+            "hosts": [('127.0.0.1', 6379)],
         },
     },
 }
