@@ -11,3 +11,5 @@ django-heroku
 upstox
 python-dateutil
 django-cors-headers
+channels
+asgi_redis
