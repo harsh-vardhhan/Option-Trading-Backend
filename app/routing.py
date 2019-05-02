@@ -1,6 +1,7 @@
+
 from django.urls import path
-from app.consumers import stock_consumer
+from app import consumers
 
 websocket_urlpatterns = [
-    path(r'^ws/$', stock_consumer)
+       path('ws/<str:room_uuid>/', consumers.stock_consumer)
 ]
