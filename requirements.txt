@@ -12,4 +12,5 @@ upstox
 python-dateutil
 django-cors-headers
 channels
+channels-redis
 asgi_redis
