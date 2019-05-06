@@ -182,3 +182,14 @@ def save_full_quotes(request):
         sleep(1)
         print(option)
     return Response({"Message": "Quotes Saved"})
+
+def live_feed():
+    def create_session():
+        access_token = json.dumps(request.data)
+        access_token_data = json.loads(access_token)
+        upstox = Upstox(api_key, "a53d3aa6a5cbee0f6d23d1119572a5bfdc084645")
+        return upstox
+    u = create_session()
+    live = u.subscribe(upstox.get_instrument_by_symbol(master_contract_EQ, ops.symbol),LiveFeedType.Full)
+    u.start_websocket
+    print(live)

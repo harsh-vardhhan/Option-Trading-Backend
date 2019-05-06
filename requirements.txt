@@ -14,3 +14,4 @@ django-cors-headers
 channels
 channels-redis
 asgi_redis
+websocket-client==0.44
