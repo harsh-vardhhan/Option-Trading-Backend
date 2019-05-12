@@ -3,7 +3,7 @@ from rest_framework.views import Response
 from upstox_api.api import Session, Upstox, LiveFeedType
 import json
 import itertools as it
-from app.models import Instrument
+from app.models import Instrument, Full_Quote
 from datetime import datetime
 import calendar
 from dateutil import relativedelta
@@ -14,7 +14,7 @@ redirect_uri = 'https://www.explainoid.com/home'
 secret_key = 'pqmnwsq8ja'
 master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
-symbol = 'reliance'
+symbol = 'RELIANCE'
 
 @api_view()
 def get_redirect_url(request):
@@ -90,34 +90,37 @@ def save_option(request):
             tick_size_val = ops[8]
             lot_size_val = ops[9]
             instrument_type_val = ops[10]
-            isin_val = ops[11] 
-            if expiry >= get_first_date() and expiry <= get_last_date():
-                if ops[5] is None:
-                        closing_price_val = ''
-                if ops[11] is None:
-                        isin_val = ''
-                if ops[7] is None:
-                        strike_price_val = ''
-                Instrument(
-                    exchange = exchange_val, 
-                    token = token_val,
-                    parent_token = parent_token_val, 
-                    symbol = symbol_val, 
-                    name = name_val,
-                    closing_price = closing_price_val,
-                    expiry = expiry_val,
-                    strike_price = strike_price_val, 
-                    tick_size = tick_size_val, 
-                    lot_size = lot_size_val,
-                    instrument_type = instrument_type_val, 
-                    isin = isin_val
-                ).save()
-                all_options.append(Instrument(
-                    ops[0], ops[1], ops[2], ops[3], ops[4],
-                    ops[5], ops[6], ops[7], ops[8], ops[9],
-                    ops[10], ops[11]
-                ))
+            isin_val = ops[11]
+            if strike_price_val != None:
+                print("strike_price", strike_price_val)
+                if expiry >= get_first_date() and expiry <= get_last_date():
+                    if ops[5] is None:
+                            closing_price_val = ''
+                    if ops[11] is None:
+                            isin_val = ''
+                    if ops[7] is None:
+                            strike_price_val = ''
+                    Instrument(
+                        exchange = exchange_val, 
+                        token = token_val,
+                        parent_token = parent_token_val, 
+                        symbol = symbol_val, 
+                        name = name_val,
+                        closing_price = closing_price_val,
+                        expiry = expiry_val,
+                        strike_price = float(strike_price_val), 
+                        tick_size = tick_size_val, 
+                        lot_size = lot_size_val,
+                        instrument_type = instrument_type_val, 
+                        isin = isin_val
+                    ).save()
+                    all_options.append(Instrument(
+                        ops[0], ops[1], ops[2], ops[3], ops[4],
+                        ops[5], ops[6], ops[7], ops[8], ops[9],
+                        ops[10], ops[11]
+                    ))
         return all_options
+    list_options()
     return Response({"Message": "Options Saved"})
 
 # separate chaining into different function
@@ -175,21 +178,33 @@ def save_full_quotes(request):
         return upstox
     upstox = create_session()
     upstox.get_master_contract(master_contract_FO)
+    Full_Quote.objects.all().delete()
     for ops in list_options:
         option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             master_contract_FO, ops.symbol),
             LiveFeedType.Full)
-        sleep(1)
-        print(option)
+        sleep(0.5)
+        optionData = json.loads(json.dumps(option))
+        Full_Quote(
+            strike_price = ops.strike_price,
+            exchange = optionData['exchange'],
+            symbol = optionData['symbol'],
+            ltp = optionData['ltp'],
+            close = optionData['close'],
+            open = optionData['open'],
+            high = optionData['high'],
+            low = optionData['low'],
+            vtt = optionData['vtt'],
+            atp = optionData['atp'],
+            oi = optionData['oi'],
+            spot_price = optionData['spot_price'],
+            total_buy_qty = optionData['total_buy_qty'],
+            total_sell_qty = optionData['total_sell_qty'],
+            lower_circuit = optionData['lower_circuit'],
+            upper_circuit = optionData['upper_circuit'],
+            yearly_low = optionData['yearly_low'],
+            yearly_high = optionData['yearly_high'],
+            ltt = optionData['ltt']
+        ).save()
     return Response({"Message": "Quotes Saved"})
 
-def live_feed():
-    def create_session():
-        access_token = json.dumps(request.data)
-        access_token_data = json.loads(access_token)
-        upstox = Upstox(api_key, "a53d3aa6a5cbee0f6d23d1119572a5bfdc084645")
-        return upstox
-    u = create_session()
-    live = u.subscribe(upstox.get_instrument_by_symbol(master_contract_EQ, ops.symbol),LiveFeedType.Full)
-    u.start_websocket
-    print(live)

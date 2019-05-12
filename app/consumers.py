@@ -1,15 +1,18 @@
 from channels.generic.websocket import AsyncWebsocketConsumer
-from app.fn_views import live_feed
 from upstox_api.api import Session, Upstox, LiveFeedType
 import json
 import asyncio
 from channels.layers import get_channel_layer
 from asgiref.sync import async_to_sync
+from app.models import Full_Quote
+import time
+import itertools as it
+from django.core.cache import cache
 
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 # ws://localhost:8000/ws/access_token/
-
+# Use POST method to get the skeleton and WebSocket to feed independent cells
 class stock_consumer(AsyncWebsocketConsumer):
     
    channel_layer = get_channel_layer()
@@ -19,9 +22,25 @@ class stock_consumer(AsyncWebsocketConsumer):
       await self.channel_layer.group_add("stock_group", self.channel_name)
       access_token = self.scope['url_route']['kwargs']['id']
       u = Upstox(api_key, access_token)    
-      u.get_master_contract('NSE_EQ')
-      u.subscribe(u.get_instrument_by_symbol('NSE_EQ', 'RELIANCE'), LiveFeedType.LTP)
-      u.subscribe(u.get_instrument_by_symbol('NSE_EQ', 'YESBANK'), LiveFeedType.LTP)
+      u.get_master_contract('NSE_FO')
+      list_options = Full_Quote.objects.all().order_by('strike_price')
+
+      for a, b in it.combinations(list_options, 2):
+         if (a.strike_price == b.strike_price):
+            if int(a.oi) > 0 and int(b.oi) > 0:
+               print(a.symbol, a.oi, a.strike_price)
+               print(b.symbol, b.oi, b.strike_price)
+               '''
+               time.sleep(0.4)
+               u.subscribe(u.get_instrument_by_symbol(
+                  str(a.exchange),
+                  str(a.symbol)), LiveFeedType.Full)
+               time.sleep(0.4)
+               u.subscribe(u.get_instrument_by_symbol(
+                  str(a.exchange),
+                  str(a.symbol)), LiveFeedType.Full)
+               '''
+
       u.start_websocket(True)
       def quote_update(message):
          stock_consumer.send_message(self, message)
@@ -35,9 +54,7 @@ class stock_consumer(AsyncWebsocketConsumer):
       await self.close()
 
    def send_message(self, message):
-      print("before")
       async_to_sync(self.channel_layer.group_send)("stock_group", {
          "type": "websocket_receive",
          "text": (message)    
       })
-      print("after")
