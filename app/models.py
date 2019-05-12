@@ -25,7 +25,7 @@ class Full_Quote(models.Model):
     low = models.CharField(max_length=40)
     vtt = models.CharField(max_length=40)
     atp = models.CharField(max_length=40)
-    oi = models.CharField(max_length=40)
+    oi = models.FloatField(max_length=40)
     spot_price = models.CharField(max_length=40)
     total_buy_qty = models.CharField(max_length=40)
     total_sell_qty = models.CharField(max_length=40)

@@ -92,7 +92,6 @@ def save_option(request):
             instrument_type_val = ops[10]
             isin_val = ops[11]
             if strike_price_val != None:
-                print("strike_price", strike_price_val)
                 if expiry >= get_first_date() and expiry <= get_last_date():
                     if ops[5] is None:
                             closing_price_val = ''
@@ -208,3 +207,25 @@ def save_full_quotes(request):
         ).save()
     return Response({"Message": "Quotes Saved"})
 
+@api_view(['POST'])
+def get_full_quotes(request):
+    list_options = Full_Quote.objects.all().order_by('strike_price')
+    def pairing():
+        option_pairs = []
+        for a, b in it.combinations(list_options, 2):
+            if (a.strike_price == b.strike_price):
+                if a.oi > 0 or b.oi > 0:
+                    a.oi = round(a.oi/100000, 1)
+                    b.oi = round(b.oi/100000, 1)
+                    option_pair = (a, b)
+                    option_pairs.append(option_pair)
+        return option_pairs
+    def obj_dict(obj):
+        return obj.__dict__
+    def option_to_json():
+        options_dump = json.dumps(pairing(), default=obj_dict)
+        options_load = json.loads(options_dump)
+        return options_load
+    return Response({
+        "Options": option_to_json()
+    })
