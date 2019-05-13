@@ -190,7 +190,7 @@ def save_full_quotes_task(accessToken):
         option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             master_contract_FO, ops.symbol),
             LiveFeedType.Full)
-        sleep(0.5)
+        sleep(1)
         optionData = json.loads(json.dumps(option))
         Full_Quote(
             strike_price = ops.strike_price,
@@ -219,7 +219,7 @@ def get_full_quotes(request):
     list_options = Full_Quote.objects.all().order_by('strike_price')
     def pairing():
         option_pairs = []
-        for a, b in it.combinations(list_options, 2):
+        for a, b in it.combinations(list_options, 2): 
             if (a.strike_price == b.strike_price):
                 a.oi = round(a.oi/100000, 1)
                 b.oi = round(b.oi/100000, 1)
