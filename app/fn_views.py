@@ -205,6 +205,7 @@ def save_full_quotes_task(accessToken):
 
 def start_save_full_quotes_task(accessToken):
     q = Queue(connection=conn)
+    print('*****************', accessToken)
     q.enqueue(save_full_quotes_task(accessToken))
 
 @api_view(['POST'])
