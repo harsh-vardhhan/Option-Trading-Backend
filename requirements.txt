@@ -16,4 +16,5 @@ channels-redis
 asgi_redis
 redis
 rq
+django-background-tasks
 websocket-client==0.44
