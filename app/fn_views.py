@@ -182,6 +182,7 @@ def save_full_quotes_task(accessToken):
             LiveFeedType.Full)
         sleep(1)
         optionData = json.loads(json.dumps(option))
+        print(optionData['exchange'])
         Full_Quote(
             strike_price = ops.strike_price,
             exchange = optionData['exchange'],
