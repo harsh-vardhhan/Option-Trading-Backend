@@ -186,7 +186,6 @@ def save_full_quotes_task(accessToken):
         return upstox
     upstox = create_session(accessToken)
     upstox.get_master_contract(master_contract_FO)
-    Full_Quote.objects.all().delete()
     for ops in list_options:
         option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             master_contract_FO, ops.symbol),
