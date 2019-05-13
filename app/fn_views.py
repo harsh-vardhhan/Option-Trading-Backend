@@ -180,6 +180,7 @@ def save_full_quotes(request):
 @background(schedule=0)
 def save_full_quotes_task(accessToken):
     list_options = Instrument.objects.all()
+    print(accessToken)
     def create_session():
         upstox = Upstox(api_key, accessToken)
         return upstox
@@ -216,10 +217,9 @@ def save_full_quotes_task(accessToken):
 
 @api_view(['POST'])
 def get_full_quotes(request):
-    list_options = Full_Quote.objects.all().order_by('strike_price')
     def pairing():
         option_pairs = []
-        for a, b in it.combinations(list_options, 2): 
+        for a, b in it.combinations(Full_Quote.objects.all().order_by('strike_price'), 2): 
             if (a.strike_price == b.strike_price):
                 a.oi = round(a.oi/100000, 1)
                 b.oi = round(b.oi/100000, 1)
