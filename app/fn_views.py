@@ -172,6 +172,7 @@ def get_option(request):
 def save_full_quotes(request):
     access_token = json.dumps(request.data)
     access_token_data = json.loads(access_token)
+    Full_Quote.objects.all().delete()
     save_full_quotes_task(access_token_data['accessToken'])
     return Response({"Message": "Quotes Saved"})
 
