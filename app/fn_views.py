@@ -8,6 +8,7 @@ from datetime import datetime
 import calendar
 from dateutil import relativedelta
 from time import sleep
+from background_task import background
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
@@ -166,14 +167,22 @@ def get_option(request):
         "Options": option_to_json()
     })
 
-# save quotes in database
+
 @api_view(['POST'])
 def save_full_quotes(request):
+    access_token = json.dumps(request.data)
+    access_token_data = json.loads(access_token)
+    save_full_quotes_task(access_token_data['accessToken'])
+    return Response({"Message": "Quotes Saved"})
+
+
+# save quotes in database
+@background(schedule=0)
+def save_full_quotes_task(accessToken):
+    print("*************", accessToken)
     list_options = Instrument.objects.all()
     def create_session():
-        access_token = json.dumps(request.data)
-        access_token_data = json.loads(access_token)
-        upstox = Upstox(api_key, access_token_data['accessToken'])
+        upstox = Upstox(api_key, accessToken)
         return upstox
     upstox = create_session()
     upstox.get_master_contract(master_contract_FO)
@@ -205,7 +214,6 @@ def save_full_quotes(request):
             yearly_high = optionData['yearly_high'],
             ltt = optionData['ltt']
         ).save()
-    return Response({"Message": "Quotes Saved"})
 
 @api_view(['POST'])
 def get_full_quotes(request):
