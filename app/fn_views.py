@@ -191,6 +191,7 @@ def save_full_quotes_task(accessToken):
             master_contract_FO, ops.symbol),
             LiveFeedType.Full)
         sleep(1)
+        print('************', accessToken)
         optionData = json.loads(json.dumps(option))
         Full_Quote(
             strike_price = ops.strike_price,
