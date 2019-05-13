@@ -207,7 +207,7 @@ def save_full_quotes(request):
         ).save()
     return Response({"Message": "Quotes Saved"})
 
-@api_view(['POST'], no_cache=True)
+@api_view(['POST'])
 def get_full_quotes(request):
     list_options = Full_Quote.objects.all().order_by('strike_price')
     def pairing():
