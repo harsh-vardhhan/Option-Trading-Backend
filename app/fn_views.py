@@ -179,7 +179,6 @@ def save_full_quotes(request):
 # save quotes in database
 @background(schedule=0)
 def save_full_quotes_task(accessToken):
-    print("*************", accessToken)
     list_options = Instrument.objects.all()
     def create_session():
         upstox = Upstox(api_key, accessToken)
@@ -222,9 +221,9 @@ def get_full_quotes(request):
         option_pairs = []
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
-                if (a.oi > 0) or (b.oi > 0):
-                    a.oi = round(a.oi/100000, 1)
-                    b.oi = round(b.oi/100000, 1)
+                a.oi = round(a.oi/100000, 1)
+                b.oi = round(b.oi/100000, 1)
+                if (a.oi > 0.0 or b.oi > 0.0):
                     option_pair = (a, b)
                     option_pairs.append(option_pair)
         return option_pairs
