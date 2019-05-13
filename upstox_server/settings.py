@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/2.0/ref/settings/
 
 import os
 import django_heroku
+import dj_database_url
 
 # Build paths inside the project like this: os.path.join(BASE_DIR, ...)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -112,6 +113,11 @@ DATABASES = {
         'PORT': '',
     }
 }
+
+DATABASE_URL = 'postgres://uskbcepgrhvnrx:25293de377423b780e80ddd06a653073c0f7e282c9f00b0d6490b489bff975a7@ec2-23-21-128-35.compute-1.amazonaws.com:5432/d4ct9loanaouam'
+db_from_env = dj_database_url.config(conn_max_age=500)
+DATABASES['default'].update(db_from_env)
+
 
 # Password validation
 # https://docs.djangoproject.com/en/2.0/ref/settings/#auth-password-validators
