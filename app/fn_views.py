@@ -173,6 +173,7 @@ def save_full_quotes_task(accessToken):
     def create_session(accessToken):
         upstox = Upstox(api_key, accessToken)
         return upstox
+    print('****************', accessToken)
     upstox = create_session(accessToken)
     upstox.get_master_contract(master_contract_FO)
     for ops in list_options:
