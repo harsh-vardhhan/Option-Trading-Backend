@@ -182,7 +182,7 @@ def save_full_quotes(request):
         option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             master_contract_FO, ops.symbol),
             LiveFeedType.Full)
-        sleep(1)
+        sleep(5)
         optionData = json.loads(json.dumps(option))
         Full_Quote(
             strike_price = ops.strike_price,
