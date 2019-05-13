@@ -14,5 +14,6 @@ django-cors-headers
 channels
 channels-redis
 asgi_redis
-django-background-tasks
+redis
+rq
 websocket-client==0.44

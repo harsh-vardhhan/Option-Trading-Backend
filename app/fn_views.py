@@ -8,7 +8,8 @@ from datetime import datetime
 import calendar
 from dateutil import relativedelta
 from time import sleep
-from background_task import background
+from rq import Queue
+from upstox_server.worker import conn
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
@@ -167,18 +168,6 @@ def get_option(request):
         "Options": option_to_json()
     })
 
-
-@api_view(['POST'])
-def save_full_quotes(request):
-    access_token = json.dumps(request.data)
-    access_token_data = json.loads(access_token)
-    Full_Quote.objects.all().delete()
-    save_full_quotes_task(access_token_data['accessToken'])
-    return Response({"Message": "Quotes Saved"})
-
-
-# save quotes in database
-@background(schedule=0)
 def save_full_quotes_task(accessToken):
     list_options = Instrument.objects.all()
     def create_session(accessToken):
@@ -191,7 +180,6 @@ def save_full_quotes_task(accessToken):
             master_contract_FO, ops.symbol),
             LiveFeedType.Full)
         sleep(1)
-        print('************', accessToken)
         optionData = json.loads(json.dumps(option))
         Full_Quote(
             strike_price = ops.strike_price,
@@ -215,6 +203,18 @@ def save_full_quotes_task(accessToken):
             ltt = optionData['ltt']
         ).save()
 
+def start_save_full_quotes_task(accessToken):
+    q = Queue(connection=conn)
+    q.enqueue(save_full_quotes_task(accessToken))
+
+@api_view(['POST'])
+def save_full_quotes(request):
+    access_token = json.dumps(request.data)
+    access_token_data = json.loads(access_token)
+    Full_Quote.objects.all().delete()
+    start_save_full_quotes_task(access_token_data['accessToken'])
+    return Response({"Message": "Quotes Saved"})
+
 @api_view(['POST'])
 def get_full_quotes(request):
     list_options = Full_Quote.objects.all().order_by('strike_price')
@@ -224,8 +224,6 @@ def get_full_quotes(request):
             if (a.strike_price == b.strike_price):
                 a.oi = round(a.oi/100000, 1)
                 b.oi = round(b.oi/100000, 1)
-                print(a.symbol, a.oi)
-                print(b.symbol, b.oi)
                 if (a.oi > 0.0 or b.oi > 0.0):
                     option_pair = (a, b)
                     option_pairs.append(option_pair)
