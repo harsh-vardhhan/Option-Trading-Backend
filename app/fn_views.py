@@ -209,7 +209,7 @@ def start_save_full_quotes_task(accessToken):
     q = Queue(connection=conn)
     print('*****************', accessToken)
     q.empty()
-    q.enqueue_call(func=save_full_quotes_task,args=(accessToken,), ttl=5000)
+    q.enqueue_call(save_full_quotes_task, **accessToken)
 
 @api_view(['POST'])
 def save_full_quotes(request):
