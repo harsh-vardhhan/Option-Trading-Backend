@@ -207,7 +207,7 @@ def save_full_quotes_task(accessToken):
     upstox.get_master_contract(master_contract_FO)
     for ops in list_options:
         q = Queue(connection=conn)
-        q.enqueue(full_quotes_queue, args=(upstox, ops))
+        q.enqueue(full_quotes_queue, upstox, ops)
 
     '''
     for ops in list_options:
