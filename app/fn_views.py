@@ -168,6 +168,35 @@ def get_option(request):
         "Options": option_to_json()
     })
 
+def full_quotes_queue(upstox, ops):
+    option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+        master_contract_FO, ops.symbol),
+        LiveFeedType.Full)
+    sleep(1)
+    optionData = json.loads(json.dumps(option))
+    print(optionData['exchange'])
+    Full_Quote(
+        strike_price = ops.stårike_price,
+        exchange = optionData['exchange'],
+        symbol = optionData['symbol'],
+        ltp = optionData['ltp'],
+        close = optionData['close'],
+        open = optionData['open'],
+        high = optionData['high'],
+        low = optionData['low'],
+        vtt = optionData['vtt'],
+        atp = optionData['atp'],
+        oi = optionData['oi'],
+        spot_price = optionData['spot_price'],
+        total_buy_qty = optionData['total_buy_qty'],
+        total_sell_qty = optionData['total_sell_qty'],
+        lower_circuit = optionData['lower_circuit'],
+        upper_circuit = optionData['upper_circuit'],
+        yearly_low = optionData['yearly_low'],
+        yearly_high = optionData['yearly_high'],
+        ltt = optionData['ltt']
+    ).save()
+
 def save_full_quotes_task(accessToken):
     list_options = Instrument.objects.all()
     def create_session(accessToken):
@@ -176,6 +205,11 @@ def save_full_quotes_task(accessToken):
     print('****************', accessToken)
     upstox = create_session(accessToken)
     upstox.get_master_contract(master_contract_FO)
+    for ops in list_options:
+        q = Queue(connection=conn)
+        q.enqueue(full_quotes_queue, (args=upstox, ops))
+
+    '''
     for ops in list_options:
         option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             master_contract_FO, ops.symbol),
@@ -204,12 +238,11 @@ def save_full_quotes_task(accessToken):
             yearly_high = optionData['yearly_high'],
             ltt = optionData['ltt']
         ).save()
+    '''
 
 def start_save_full_quotes_task(accessToken):
     q = Queue(connection=conn)
-    print('*****************', accessToken)
-    q.empty()
-    q.enqueue(save_full_quotes_task, *accessToken)
+    q.enqueue(save_full_quotes_task, accessToken)
 
 @api_view(['POST'])
 def save_full_quotes(request):
