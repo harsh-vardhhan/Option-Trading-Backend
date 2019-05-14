@@ -14,6 +14,7 @@ django-cors-headers
 channels
 channels-redis
 asgi_redis
+asgiref
 redis
 rq
 django-background-tasks
