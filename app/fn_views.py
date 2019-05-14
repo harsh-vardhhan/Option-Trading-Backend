@@ -9,7 +9,15 @@ import calendar
 from dateutil import relativedelta
 from time import sleep
 from rq import Queue
-from upstox_server.worker import conn
+from worker import conn
+from app.background_process import full_quotes_queue
+import requests
+
+import os
+import redis
+
+redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
+r = redis.from_url(redis_url)
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
@@ -168,83 +176,18 @@ def get_option(request):
         "Options": option_to_json()
     })
 
-def full_quotes_queue():
-    print("***********IN WORKER NOW***********")
-    option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-        master_contract_FO, ops.symbol),
-        LiveFeedType.Full)
-    sleep(1)
-    optionData = json.loads(json.dumps(option))
-    print(optionData['exchange'])
-    Full_Quote(
-        strike_price = ops.stårike_price,
-        exchange = optionData['exchange'],
-        symbol = optionData['symbol'],
-        ltp = optionData['ltp'],
-        close = optionData['close'],
-        open = optionData['open'],
-        high = optionData['high'],
-        low = optionData['low'],
-        vtt = optionData['vtt'],
-        atp = optionData['atp'],
-        oi = optionData['oi'],
-        spot_price = optionData['spot_price'],
-        total_buy_qty = optionData['total_buy_qty'],
-        total_sell_qty = optionData['total_sell_qty'],
-        lower_circuit = optionData['lower_circuit'],
-        upper_circuit = optionData['upper_circuit'],
-        yearly_low = optionData['yearly_low'],
-        yearly_high = optionData['yearly_high'],
-        ltt = optionData['ltt']
-    ).save()
-
 def save_full_quotes_task(accessToken):
     list_options = Instrument.objects.all()
+    q = Queue(connection=conn)
     def create_session(accessToken):
         upstox = Upstox(api_key, accessToken)
-        return upstox
-    print('****************', accessToken)
+        return upstox  
     upstox = create_session(accessToken)
     upstox.get_master_contract(master_contract_FO)
     for ops in list_options:
-        q = Queue(connection=conn)
-        q.enqueue(full_quotes_queue)
+        option = q.enqueue(full_quotes_queue, accessToken, ops.symbol)
+        print(option.result)
 
-    '''
-    for ops in list_options:
-        option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            master_contract_FO, ops.symbol),
-            LiveFeedType.Full)
-        sleep(1)
-        optionData = json.loads(json.dumps(option))
-        print(optionData['exchange'])
-        Full_Quote(
-            strike_price = ops.strike_price,
-            exchange = optionData['exchange'],
-            symbol = optionData['symbol'],
-            ltp = optionData['ltp'],
-            close = optionData['close'],
-            open = optionData['open'],
-            high = optionData['high'],
-            low = optionData['low'],
-            vtt = optionData['vtt'],
-            atp = optionData['atp'],
-            oi = optionData['oi'],
-            spot_price = optionData['spot_price'],
-            total_buy_qty = optionData['total_buy_qty'],
-            total_sell_qty = optionData['total_sell_qty'],
-            lower_circuit = optionData['lower_circuit'],
-            upper_circuit = optionData['upper_circuit'],
-            yearly_low = optionData['yearly_low'],
-            yearly_high = optionData['yearly_high'],
-            ltt = optionData['ltt']
-        ).save()
-    '''
-'''
-def start_save_full_quotes_task(accessToken):
-    q = Queue(connection=conn)
-    q.enqueue(save_full_quotes_task, accessToken)
-'''
 
 @api_view(['POST'])
 def save_full_quotes(request):
@@ -256,6 +199,9 @@ def save_full_quotes(request):
 
 @api_view(['POST'])
 def get_full_quotes(request):
+    list_option = Instrument.objects.all()
+    for ops in list_option:
+        print(r.get(ops.symbol))
     list_options = Full_Quote.objects.all().order_by('strike_price')
     def pairing():
         option_pairs = []
