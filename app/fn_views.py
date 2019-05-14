@@ -239,17 +239,18 @@ def save_full_quotes_task(accessToken):
             ltt = optionData['ltt']
         ).save()
     '''
-
+'''
 def start_save_full_quotes_task(accessToken):
     q = Queue(connection=conn)
     q.enqueue(save_full_quotes_task, accessToken)
+'''
 
 @api_view(['POST'])
 def save_full_quotes(request):
     access_token = json.dumps(request.data)
     access_token_data = json.loads(access_token)
     Full_Quote.objects.all().delete()
-    start_save_full_quotes_task(access_token_data['accessToken'])
+    save_full_quotes_task(access_token_data['accessToken'])
     return Response({"Message": "Quotes Saved"})
 
 @api_view(['POST'])
