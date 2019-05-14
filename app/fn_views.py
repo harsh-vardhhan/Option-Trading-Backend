@@ -168,7 +168,8 @@ def get_option(request):
         "Options": option_to_json()
     })
 
-def full_quotes_queue(upstox, ops):
+def full_quotes_queue():
+    print("***********IN WORKER NOW***********")
     option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
         master_contract_FO, ops.symbol),
         LiveFeedType.Full)
@@ -207,7 +208,7 @@ def save_full_quotes_task(accessToken):
     upstox.get_master_contract(master_contract_FO)
     for ops in list_options:
         q = Queue(connection=conn)
-        q.enqueue(full_quotes_queue, upstox, ops)
+        q.enqueue(full_quotes_queue)
 
     '''
     for ops in list_options:
