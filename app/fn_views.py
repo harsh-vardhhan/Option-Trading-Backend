@@ -232,7 +232,7 @@ def get_full_quotes(request):
             if (a.strike_price == b.strike_price):
                 a.oi = round(a.oi/100000, 1)
                 b.oi = round(b.oi/100000, 1)
-                if (a.oi > 0.0 or b.oi > 0.0):
+                if (a.oi > 0.0 and b.oi > 0.0):
                     option_pair = (a, b)
                     option_pairs.append(option_pair)
         return option_pairs
