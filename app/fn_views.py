@@ -186,7 +186,6 @@ def save_full_quotes_task(accessToken):
     upstox.get_master_contract(master_contract_FO)
     for ops in list_options:
         option = q.enqueue(full_quotes_queue, accessToken, ops.symbol)
-        print(option.result)
 
 
 @api_view(['POST'])
