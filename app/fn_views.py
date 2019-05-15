@@ -199,6 +199,12 @@ def save_full_quotes(request):
 
 @api_view(['POST'])
 def get_full_quotes(request):
+    def create_session():
+        access_token = json.dumps(request.data)
+        access_token_data = json.loads(access_token)
+        upstox = Upstox(api_key, access_token_data['accessToken'])
+        return upstox 
+    upstox = create_session(accessToken)
     list_option = Instrument.objects.all()
     Full_Quote.objects.all().delete()
     for ops in list_option:
