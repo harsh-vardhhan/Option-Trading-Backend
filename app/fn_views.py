@@ -12,7 +12,7 @@ from rq import Queue
 from worker import conn
 from app.background_process import full_quotes_queue
 import requests
-
+import ast
 import os
 import redis
 
@@ -201,7 +201,29 @@ def save_full_quotes(request):
 def get_full_quotes(request):
     list_option = Instrument.objects.all()
     for ops in list_option:
-        print(r.get(ops.symbol))
+        val = r.get(ops.symbol).decode("utf-8")
+        optionData = ast.literal_eval(val)
+        Full_Quote(
+            strike_price = ops.strike_price,
+            exchange = optionData['exchange'],
+            symbol = optionData['symbol'],
+            ltp = optionData['ltp'],
+            close = optionData['close'],
+            open = optionData['open'],
+            high = optionData['high'],
+            low = optionData['low'],
+            vtt = optionData['vtt'],
+            atp = optionData['atp'],
+            oi = optionData['oi'],
+            spot_price = optionData['spot_price'],
+            total_buy_qty = optionData['total_buy_qty'],
+            total_sell_qty = optionData['total_sell_qty'],
+            lower_circuit = optionData['lower_circuit'],
+            upper_circuit = optionData['upper_circuit'],
+            yearly_low = optionData['yearly_low'],
+            yearly_high = optionData['yearly_high'],
+            ltt = optionData['ltt']
+        ).save()
     list_options = Full_Quote.objects.all().order_by('strike_price')
     def pairing():
         option_pairs = []
