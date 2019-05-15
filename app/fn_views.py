@@ -200,6 +200,7 @@ def save_full_quotes(request):
 @api_view(['POST'])
 def get_full_quotes(request):
     list_option = Instrument.objects.all()
+    Full_Quote.objects.all().delete()
     for ops in list_option:
         val = r.get(ops.symbol).decode("utf-8")
         optionData = ast.literal_eval(val)
