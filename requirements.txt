@@ -15,7 +15,7 @@ channels
 channels-redis
 asgi_redis
 asgiref
-redis
-rq
+redis==2.10.6
+rq==0.12.0
 django-background-tasks
 websocket-client==0.44
