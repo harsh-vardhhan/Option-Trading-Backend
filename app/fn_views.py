@@ -238,7 +238,7 @@ def get_full_quotes(request):
                 a.oi = round(a.oi/100000, 1)
                 b.oi = round(b.oi/100000, 1)
                 if (a.oi > 0.0 and b.oi > 0.0):
-                    option_pair = (a, b)
+                    option_pair = (a, b, a.strike_price)
                     option_pairs.append(option_pair)
         return option_pairs
     def obj_dict(obj):
