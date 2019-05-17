@@ -36,15 +36,17 @@ class stock_consumer(AsyncWebsocketConsumer):
       def quote_update(message):
          stock_consumer.send_message(self, message)
       u.set_on_quote_update(quote_update)
-   
+
+         
    async def websocket_receive(self, event):
       await self.send(text_data=json.dumps(event))
       
-   async def websocket_disconnect(self, message):
-      await self.channel_layer.group_discard('stock_grogup', self.channel_name)
-      await self.close()
+   def websocket_disconnect(self, message):
+      self.channel_layer.group_discard('stock_grogup', self.channel_name)
+      self.close()
 
    def send_message(self, message):
+      self.send(text_data=json.dumps(message))
       async_to_sync(self.channel_layer.group_send)("stock_group", {
          "type": "websocket_receive",
          "text": (message)    

@@ -23,13 +23,11 @@ def full_quotes_queue(accessToken, symbol):
 def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
     print(a_symbol)
     print(b_symbol)
-    sleep(1)
     u = Upstox(api_key, access_token)
     u.get_master_contract(master_contract_FO)
     u.subscribe(u.get_instrument_by_symbol(
         str(exchange),
         str(a_symbol)), LiveFeedType.Full)
-    sleep(1)
     u.subscribe(u.get_instrument_by_symbol(
         str(exchange),
         str(b_symbol)), LiveFeedType.Full)
