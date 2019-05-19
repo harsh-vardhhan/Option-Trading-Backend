@@ -21,8 +21,6 @@ def full_quotes_queue(accessToken, symbol):
     r.set(symbol, optionData)
 
 def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
-    print(a_symbol)
-    print(b_symbol)
     u = Upstox(api_key, access_token)
     u.get_master_contract(master_contract_FO)
     u.subscribe(u.get_instrument_by_symbol(

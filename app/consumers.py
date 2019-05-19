@@ -34,6 +34,7 @@ class stock_consumer(AsyncWebsocketConsumer):
                q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
       u.start_websocket(True)
       def quote_update(message):
+         ## TIME.SLEEP PERHAPS for a bit more relaxed approach
          stock_consumer.send_message(self, message)
       u.set_on_quote_update(quote_update)
 

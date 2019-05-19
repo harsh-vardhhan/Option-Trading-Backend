@@ -233,13 +233,15 @@ def get_full_quotes(request):
     list_options = Full_Quote.objects.all().order_by('strike_price')
     def pairing():
         option_pairs = []
-        for a, b in it.combinations(list_options, 2): 
+        for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
-                a.oi = round(a.oi/100000, 1)
-                b.oi = round(b.oi/100000, 1)
                 if (a.oi > 0.0 and b.oi > 0.0):
-                    option_pair = (a, b, a.strike_price)
-                    option_pairs.append(option_pair)
+                    if (a.symbol[-2:] == 'CE'):
+                        option_pair = (a, b, a.strike_price)
+                        option_pairs.append(option_pair)
+                    else:
+                        option_pair = (b, a, a.strike_price)
+                        option_pairs.append(option_pair)
         return option_pairs
     def obj_dict(obj):
         return obj.__dict__
