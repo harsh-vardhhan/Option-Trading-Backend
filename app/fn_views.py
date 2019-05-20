@@ -11,6 +11,7 @@ from time import sleep
 from rq import Queue
 from worker import conn
 from app.background_process import full_quotes_queue
+from django.db import connection
 import requests
 import ast
 import os
@@ -202,8 +203,8 @@ def get_full_quotes(request):
         access_token = json.dumps(request.data)
         access_token_data = json.loads(access_token)
         upstox = Upstox(api_key, access_token_data['accessToken'])
-        return upstox 
-    upstox = create_session(request)
+        return upstox         
+        upstox = create_session(request)
     list_option = Instrument.objects.all()
     Full_Quote.objects.all().delete()
     for ops in list_option:
@@ -230,6 +231,7 @@ def get_full_quotes(request):
             yearly_high = optionData['yearly_high'],
             ltt = optionData['ltt']
         ).save()
+    connection.close()
     list_options = Full_Quote.objects.all().order_by('strike_price')
     def pairing():
         option_pairs = []
@@ -242,6 +244,7 @@ def get_full_quotes(request):
                     else:
                         option_pair = (b, a, a.strike_price)
                         option_pairs.append(option_pair)
+        connection.close()
         return option_pairs
     def obj_dict(obj):
         return obj.__dict__

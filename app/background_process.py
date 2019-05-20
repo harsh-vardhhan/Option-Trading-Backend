@@ -26,6 +26,7 @@ def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
     u.subscribe(u.get_instrument_by_symbol(
         str(exchange),
         str(a_symbol)), LiveFeedType.Full)
+    r.set(a_symbol+'_subscribed', access_token)
     u.subscribe(u.get_instrument_by_symbol(
         str(exchange),
         str(b_symbol)), LiveFeedType.Full)

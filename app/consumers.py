@@ -11,8 +11,13 @@ from django.core.cache import cache
 from rq import Queue
 from worker import conn
 from app.background_process import instrument_subscribe_queue
+import redis
+import os
+from django.db import connection
 
 
+redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
+r = redis.from_url(redis_url)
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 # ws://localhost:8000/ws/access_token/
 # Use POST method to get the skeleton and WebSocket to feed independent cells
@@ -27,14 +32,19 @@ class stock_consumer(AsyncWebsocketConsumer):
       u = Upstox(api_key, access_token)    
       u.get_master_contract('NSE_FO')
       list_options = Full_Quote.objects.all().order_by('strike_price')
+
+
       for a, b in it.combinations(list_options, 2):
          if (a.strike_price == b.strike_price):
             if int(a.oi) > 0 and int(b.oi) > 0:
-               q = Queue(connection=conn)
-               q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
+               if(r.exists(a.symbol+'_subscribed') == False
+               and r.get(a.symbol+'_subscribed') != access_token):         
+                     q = Queue(connection=conn)
+                     q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
+      connection.close()
+      
       u.start_websocket(True)
       def quote_update(message):
-         ## TIME.SLEEP PERHAPS for a bit more relaxed approach
          stock_consumer.send_message(self, message)
       u.set_on_quote_update(quote_update)
 
@@ -43,7 +53,7 @@ class stock_consumer(AsyncWebsocketConsumer):
       await self.send(text_data=json.dumps(event))
       
    def websocket_disconnect(self, message):
-      self.channel_layer.group_discard('stock_grogup', self.channel_name)
+      self.channel_layer.group_discard('stock_group', self.channel_name)
       self.close()
 
    def send_message(self, message):
