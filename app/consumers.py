@@ -37,11 +37,15 @@ class stock_consumer(AsyncWebsocketConsumer):
       for a, b in it.combinations(list_options, 2):
          if (a.strike_price == b.strike_price):
             if int(a.oi) > 0 and int(b.oi) > 0:
-               if(r.exists(a.symbol+'_subscribed') == False):         
+
+               subscribed_key = a.symbol+'_subscribed'
+               subscribed_access_token = r.get(subscribed_key).decode("utf-8")
+               
+               if(r.exists(subscribed_key) == False):         
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
-               elif(r.exists(a.symbol+'_subscribed') == True
-               and r.get(a.symbol+'_subscribed') != access_token):
+               elif(r.exists(subscribed_key) == True
+               and subscribed_access_token != access_token):
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
 
