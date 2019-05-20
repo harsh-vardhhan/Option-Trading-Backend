@@ -40,7 +40,7 @@ class stock_consumer(AsyncWebsocketConsumer):
                if(r.exists(a.symbol+'_subscribed') == False):         
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
-               else if(r.exists(a.symbol+'_subscribed') == True
+               elif(r.exists(a.symbol+'_subscribed') == True
                and r.get(a.symbol+'_subscribed') != access_token):
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
