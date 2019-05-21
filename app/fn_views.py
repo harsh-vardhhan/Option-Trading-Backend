@@ -204,7 +204,28 @@ def get_full_quotes(request):
         access_token_data = json.loads(access_token)
         upstox = Upstox(api_key, access_token_data['accessToken'])
         return upstox         
-        upstox = create_session(request)
+    def search_equity():
+        upstox.get_master_contract(master_contract_EQ)
+        equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+            master_contract_EQ, symbol),
+            LiveFeedType.Full)
+        equity_data = json.loads(json.dumps(equity))
+        stock = Instrument(
+            equity_data['exchange'],
+            "",
+            "",
+            equity_data['symbol'],
+            "",
+            equity_data['ltp'],
+            "",
+            0.0,
+            "",
+            "",
+            "",
+            ""
+        )
+        return stock
+    upstox = create_session(request)
     list_option = Instrument.objects.all()
     Full_Quote.objects.all().delete()
     for ops in list_option:
@@ -248,10 +269,15 @@ def get_full_quotes(request):
         return option_pairs
     def obj_dict(obj):
         return obj.__dict__
+    def stock_to_json():
+        stock_dump = json.dumps(search_equity(), default=obj_dict)
+        stock_load = json.loads(stock_dump)
+        return stock_load
     def option_to_json():
         options_dump = json.dumps(pairing(), default=obj_dict)
         options_load = json.loads(options_dump)
         return options_load
     return Response({
+        "Stock": stock_to_json(),
         "Options": option_to_json()
     })
