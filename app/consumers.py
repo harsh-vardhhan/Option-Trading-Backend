@@ -43,17 +43,14 @@ class stock_consumer(AsyncWebsocketConsumer):
                      return ""
                   else:
                      return r.get(subscribed_key).decode("utf-8")
-               subscribed_access_token = get_key()    
+               subscribed_access_token = get_key()
                if(r.exists(subscribed_key) == False):      
-                     print("case1")   
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
                elif(r.exists(subscribed_key) == True
                and subscribed_access_token != access_token):
-                     print("case2")
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
-
       connection.close()
       
       u.start_websocket(True)

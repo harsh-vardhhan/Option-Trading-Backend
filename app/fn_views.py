@@ -178,6 +178,7 @@ def get_option(request):
     })
 
 def save_full_quotes_task(accessToken):
+    r.flushall()
     list_options = Instrument.objects.all()
     q = Queue(connection=conn)
     def create_session(accessToken):
