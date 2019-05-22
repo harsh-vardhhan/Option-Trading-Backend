@@ -39,19 +39,12 @@ def get_redirect_url(request):
 def get_access_token(request):
     request_code = json.dumps(request.data)
     request_code_data = json.loads(request_code)
-    access_token = 0
-    try:
-        session = Session(api_key)
-        session.set_redirect_uri(redirect_uri)
-        session.set_api_secret(secret_key)
-        session.set_code(request_code_data['requestcode'])
-        access_token = session.retrieve_access_token()
-    except:
-        print("Error")
-    if access_token == 0:
-        return Response({"accessToken": access_token})
-    else:
-        return Response({"Error": "Invalid Access Token"})
+    session = Session(api_key)
+    session.set_redirect_uri(redirect_uri)
+    session.set_api_secret(secret_key)
+    session.set_code(request_code_data['requestcode'])
+    access_token = session.retrieve_access_token()
+    return Response({"accessToken": access_token})
     
 
 @api_view(['POST'])
