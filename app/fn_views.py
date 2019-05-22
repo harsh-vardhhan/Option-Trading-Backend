@@ -39,6 +39,7 @@ def get_redirect_url(request):
 def get_access_token(request):
     request_code = json.dumps(request.data)
     request_code_data = json.loads(request_code)
+    access_token = ""
     try:
         session = Session(api_key)
         session.set_redirect_uri(redirect_uri)
@@ -46,7 +47,7 @@ def get_access_token(request):
         session.set_code(request_code_data['requestcode'])
         access_token = session.retrieve_access_token()
     except:
-        print("*********token error*******")
+        access_token = "Session Couldn't be created"
     return Response({"accessToken": access_token})
 
 @api_view(['POST'])
