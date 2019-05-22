@@ -14,7 +14,7 @@ from app.background_process import instrument_subscribe_queue
 import redis
 import os
 from django.db import connection
-
+import pdb
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
@@ -62,9 +62,8 @@ class stock_consumer(AsyncWebsocketConsumer):
    async def websocket_receive(self, event):
       await self.send(text_data=json.dumps(event))
       
-   def websocket_disconnect(self, message):
-      self.channel_layer.group_discard('stock_group', self.channel_name)
-      self.close()
+   async def websocket_disconnect(self):
+      await self.channel_layer.group_discard('stock_group', self.channel_name)
 
    def send_message(self, message):
       self.send(text_data=json.dumps(message))
