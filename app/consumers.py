@@ -62,7 +62,7 @@ class stock_consumer(AsyncWebsocketConsumer):
    async def websocket_receive(self, event):
       await self.send(text_data=json.dumps(event))
       
-   async def websocket_disconnect(self):
+   async def websocket_disconnect(self, message):
       await self.channel_layer.group_discard('stock_group', self.channel_name)
 
    def send_message(self, message):

@@ -200,6 +200,17 @@ def save_full_quotes(request):
     return Response({"Message": "Quotes Saved"})
 
 @api_view(['POST'])
+def validate_token(request):
+    access_token = json.dumps(request.data)
+    access_token_data = json.loads(access_token)
+    try:
+        upstox = Upstox(api_key, access_token_data['accessToken'])
+        return Response({"status": 1})
+    except:
+        return Response({"status": 0})
+
+
+@api_view(['POST'])
 def get_full_quotes(request): 
     def create_session(request):
         access_token = json.dumps(request.data)
