@@ -25,7 +25,11 @@ redirect_uri = 'https://www.explainoid.com/home'
 secret_key = 'pqmnwsq8ja'
 master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
+nse_index = 'NSE_INDEX' 
 symbol = 'RELIANCE'
+niftyit = 'niftyit'
+symbols = ['NIFTY']
+expiry_date = "19JUN"
 
 @api_view()
 def get_redirect_url(request):
@@ -45,7 +49,6 @@ def get_access_token(request):
     session.set_code(request_code_data['requestcode'])
     access_token = session.retrieve_access_token()
     return Response({"accessToken": access_token})
-    
 
 @api_view(['POST'])
 def search_symbol(request):
@@ -70,7 +73,7 @@ def save_option(request):
         access_token_data = json.loads(access_token)
         upstox = Upstox(api_key, access_token_data['accessToken'])
         return upstox
-    def search_options():
+    def search_options(symbol):
         upstox = create_session()
         upstox.get_master_contract(master_contract_FO)
         option_search = upstox.search_instruments(master_contract_FO, symbol)
@@ -89,47 +92,53 @@ def save_option(request):
         # Creating Python Objects of all options
         all_options = []
         Instrument.objects.all().delete()
-        for ops in search_options():
-            expiry = int(ops[6])
-            exchange_val = ops[0]
-            token_val = ops[1]
-            parent_token_val = ops[2]
-            symbol_val = ops[3]
-            name_val = ops[4]
-            closing_price_val = ops[5]
-            expiry_val = ops[6]
-            strike_price_val = ops[7]
-            tick_size_val = ops[8]
-            lot_size_val = ops[9]
-            instrument_type_val = ops[10]
-            isin_val = ops[11]
-            if strike_price_val != None:
-                if expiry >= get_first_date() and expiry <= get_last_date():
-                    if ops[5] is None:
-                            closing_price_val = ''
-                    if ops[11] is None:
-                            isin_val = ''
-                    if ops[7] is None:
-                            strike_price_val = ''
-                    Instrument(
-                        exchange = exchange_val, 
-                        token = token_val,
-                        parent_token = parent_token_val, 
-                        symbol = symbol_val, 
-                        name = name_val,
-                        closing_price = closing_price_val,
-                        expiry = expiry_val,
-                        strike_price = float(strike_price_val), 
-                        tick_size = tick_size_val, 
-                        lot_size = lot_size_val,
-                        instrument_type = instrument_type_val, 
-                        isin = isin_val
-                    ).save()
-                    all_options.append(Instrument(
-                        ops[0], ops[1], ops[2], ops[3], ops[4],
-                        ops[5], ops[6], ops[7], ops[8], ops[9],
-                        ops[10], ops[11]
-                    ))
+        for symbol in symbols:
+            for ops in search_options(symbol):
+                expiry = int(ops[6])
+                exchange_val = ops[0]
+                token_val = ops[1]
+                parent_token_val = ops[2]
+                symbol_val = ops[3]
+                name_val = ops[4]
+                closing_price_val = ops[5]
+                expiry_val = ops[6]
+                strike_price_val = ops[7]
+                tick_size_val = ops[8]
+                lot_size_val = ops[9]
+                instrument_type_val = ops[10]
+                isin_val = ops[11]
+                if strike_price_val != None:
+                    if closing_price_val != None:
+                        # Avoid NIFTYIT since searching for 
+                        # NIFTY and BANKNIFTY alongs brings
+                        # along this and it lacks liquidity
+                        if symbol_val[:7] != niftyit:
+                            if expiry >= get_first_date() and expiry <= get_last_date():
+                                if ops[5] is None:
+                                        closing_price_val = ''
+                                if ops[11] is None:
+                                        isin_val = ''
+                                if ops[7] is None:
+                                        strike_price_val = ''
+                                Instrument(
+                                    exchange = exchange_val, 
+                                    token = token_val,
+                                    parent_token = parent_token_val, 
+                                    symbol = symbol_val, 
+                                    name = name_val,
+                                    closing_price = closing_price_val,
+                                    expiry = expiry_val,
+                                    strike_price = float(strike_price_val), 
+                                    tick_size = tick_size_val, 
+                                    lot_size = lot_size_val,
+                                    instrument_type = instrument_type_val, 
+                                    isin = isin_val
+                                ).save()
+                                all_options.append(Instrument(
+                                    ops[0], ops[1], ops[2], ops[3], ops[4],
+                                    ops[5], ops[6], ops[7], ops[8], ops[9],
+                                    ops[10], ops[11]
+                                ))
         return all_options
     list_options()
     return Response({"Message": "Options Saved"})
@@ -212,66 +221,69 @@ def validate_token(request):
 
 @api_view(['POST'])
 def get_full_quotes(request): 
+    request_data = json.loads(json.dumps(request.data))
     def create_session(request):
-        access_token = json.dumps(request.data)
-        access_token_data = json.loads(access_token)
-        upstox = Upstox(api_key, access_token_data['accessToken'])
+        upstox = Upstox(api_key, request_data['accessToken'])
         return upstox         
     def search_equity():
-        upstox.get_master_contract(master_contract_EQ)
+        upstox = create_session(request)
+        upstox.get_master_contract(nse_index)
         equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            master_contract_EQ, symbol),
+            nse_index, request_data['indices']),
             LiveFeedType.Full)
         equity_data = json.loads(json.dumps(equity))
         stock = Instrument(
-            equity_data['exchange'],
-            "",
-            "",
-            equity_data['symbol'],
-            "",
-            equity_data['ltp'],
-            "",
-            0.0,
-            "",
-            "",
-            "",
-            ""
+            equity_data['exchange'], "", "", 
+            equity_data['symbol'], "", 
+            equity_data['ltp'], "", 0.0, "", "", "", ""
         )
         return stock
-    upstox = create_session(request)
-    list_option = Instrument.objects.all()
-    Full_Quote.objects.all().delete()
-    for ops in list_option:
-        val = r.get(ops.symbol).decode("utf-8")
-        optionData = ast.literal_eval(val)
-        Full_Quote(
-            strike_price = ops.strike_price,
-            exchange = optionData['exchange'],
-            symbol = optionData['symbol'],
-            ltp = optionData['ltp'],
-            close = optionData['close'],
-            open = optionData['open'],
-            high = optionData['high'],
-            low = optionData['low'],
-            vtt = optionData['vtt'],
-            atp = optionData['atp'],
-            oi = optionData['oi'],
-            spot_price = optionData['spot_price'],
-            total_buy_qty = optionData['total_buy_qty'],
-            total_sell_qty = optionData['total_sell_qty'],
-            lower_circuit = optionData['lower_circuit'],
-            upper_circuit = optionData['upper_circuit'],
-            yearly_low = optionData['yearly_low'],
-            yearly_high = optionData['yearly_high'],
-            ltt = optionData['ltt']
-        ).save()
-    connection.close()
-    list_options = Full_Quote.objects.all().order_by('strike_price')
+    def search_option():
+        upstox = create_session(request)
+        upstox.get_master_contract(master_contract_FO)
+        list_option = Instrument.objects.all()
+        Full_Quote.objects.all().delete()
+        for ops in list_option:
+            val = r.get(ops.symbol).decode("utf-8")
+            optionData = ast.literal_eval(val)
+            # This has been done to differentiate between NIFTY and BANKNIFTY
+            symbol_len = len(request_data['symbol'])
+            if(optionData['symbol'][:symbol_len] == request_data['symbol']):
+                # This is to fetch Monthly Options only
+                trim_symbol = optionData['symbol'][symbol_len:]
+                symbol_date = trim_symbol[:5]
+                if (symbol_date == expiry_date):
+                    Full_Quote(
+                        strike_price = ops.strike_price,
+                        exchange = optionData['exchange'],
+                        symbol = optionData['symbol'],
+                        ltp = optionData['ltp'],
+                        close = optionData['close'],
+                        open = optionData['open'],
+                        high = optionData['high'],
+                        low = optionData['low'],
+                        vtt = optionData['vtt'],
+                        atp = optionData['atp'],
+                        oi = optionData['oi'],
+                        spot_price = optionData['spot_price'],
+                        total_buy_qty = optionData['total_buy_qty'],
+                        total_sell_qty = optionData['total_sell_qty'],
+                        lower_circuit = optionData['lower_circuit'],
+                        upper_circuit = optionData['upper_circuit'],
+                        yearly_low = optionData['yearly_low'],
+                        yearly_high = optionData['yearly_high'],
+                        ltt = optionData['ltt']
+                    ).save()
+        connection.close()
+    search_option()
     def pairing():
+        list_options = Full_Quote.objects.all().order_by('strike_price')
         option_pairs = []
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
-                if (a.oi > 0.0 and b.oi > 0.0):
+                # remove strikes which are less than ₹ 10,000 
+                if (round(a.oi/100000,1) > 0.0 and round(b.oi/100000,1) > 0.0):
+                    # arrange option pair always in CE and PE order
                     if (a.symbol[-2:] == 'CE'):
                         option_pair = (a, b, a.strike_price)
                         option_pairs.append(option_pair)
