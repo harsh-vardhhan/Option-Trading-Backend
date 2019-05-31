@@ -28,7 +28,7 @@ master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX' 
 symbol = 'RELIANCE'
 niftyit = 'niftyit'
-symbols = ['NIFTY']
+symbols = ['NIFTY','BANKNIFTY']
 expiry_date = "19JUN"
 
 @api_view()
@@ -143,17 +143,13 @@ def save_option(request):
     return Response({"Message": "Options Saved"})
 
 
-# Step 1: Fetch all the Quotes and cache it in redis
-# TODO - Make step 1 and step 2 iterate over an symbols[] 
-# without the hassle of passing instrument symbol in post
-# request body
+# Step 1: Fetch all the  Full Quotes and cache it in redis
 # NOTE - This is a time consuming process there instruments
 # passed through this should be filtred. 
 @api_view(['POST'])
 def cache_full_quotes_redis(request):
     request_data = json.loads(json.dumps(request.data))
     access_token = request_data['accessToken']
-    symbol = request_data['symbol']
     r.flushall()
     list_options = Instrument.objects.all()
     q = Queue(connection=conn)
@@ -162,16 +158,18 @@ def cache_full_quotes_redis(request):
         return upstox
     upstox = create_session(access_token)
     upstox.get_master_contract(master_contract_FO)
-    symbol_len = len(symbol)
-    for ops in list_options:
-        # This has been done to differentiate between NIFTY and BANKNIFTY
-        symbol_fetched = ops.symbol[:symbol_len]
-        if (symbol_fetched.upper() == symbol):
-            # This is to fetch Monthly Options only
-            trim_symbol = ops.symbol[symbol_len:]
-            expiry_date_fetched = trim_symbol[:len(expiry_date)] 
-            if(expiry_date_fetched.upper() == expiry_date):
-                q.enqueue(full_quotes_queue, access_token, ops.symbol)
+    # symbol = request_data['symbol']
+    for symbol in symbols: 
+        symbol_len = len(symbol)
+        for ops in list_options:
+            # This has been done to differentiate between NIFTY and BANKNIFTY
+            symbol_fetched = ops.symbol[:symbol_len]
+            if (symbol_fetched.upper() == symbol):
+                # This is to fetch Monthly Options only
+                trim_symbol = ops.symbol[symbol_len:]
+                expiry_date_fetched = trim_symbol[:len(expiry_date)] 
+                if(expiry_date_fetched.upper() == expiry_date):
+                    q.enqueue(full_quotes_queue, access_token, ops.symbol)
     return Response({"Message": "Quotes Saved"})
 
 # Step 2: From redis move all the Quotes to database
@@ -184,38 +182,39 @@ def save_full_quotes_db(request):
         return upstox
     list_option = Instrument.objects.all()
     Full_Quote.objects.all().delete()
-    for ops in list_option:
-        # This has been done to differentiate between NIFTY and BANKNIFTY
-        symbol_len = len(request_data['symbol'])
-        symbol_cache = ops.symbol[:symbol_len]
-        if(symbol_cache.upper() == request_data['symbol']):
-            # This is to fetch Monthly Options only
-            trim_symbol = ops.symbol[symbol_len:]
-            symbol_date = trim_symbol[:len(expiry_date)]
-            if (symbol_date.upper() == expiry_date):
-                val = r.get(ops.symbol).decode("utf-8")
-                option = ast.literal_eval(val)
-                Full_Quote(
-                    strike_price = ops.strike_price,
-                    exchange = option['exchange'],
-                    symbol = option['symbol'],
-                    ltp = option['ltp'],
-                    close = option['close'],
-                    open = option['open'],
-                    high = option['high'],
-                    low = option['low'],
-                    vtt = option['vtt'],
-                    atp = option['atp'],
-                    oi = option['oi'],
-                    spot_price = option['spot_price'],
-                    total_buy_qty = option['total_buy_qty'],
-                    total_sell_qty = option['total_sell_qty'],
-                    lower_circuit = option['lower_circuit'],
-                    upper_circuit = option['upper_circuit'],
-                    yearly_low = option['yearly_low'],
-                    yearly_high = option['yearly_high'],
-                    ltt = option['ltt']
-                ).save()
+    for symbol in symbols:
+        for ops in list_option:
+            # This has been done to differentiate between NIFTY and BANKNIFTY
+            symbol_len = len(symbol)
+            symbol_cache = ops.symbol[:symbol_len]
+            if(symbol_cache.upper() == symbol):
+                # This is to fetch Monthly Options only
+                trim_symbol = ops.symbol[symbol_len:]
+                symbol_date = trim_symbol[:len(expiry_date)]
+                if (symbol_date.upper() == expiry_date):
+                    val = r.get(ops.symbol).decode("utf-8")
+                    option = ast.literal_eval(val)
+                    Full_Quote(
+                        strike_price = ops.strike_price,
+                        exchange = option['exchange'],
+                        symbol = option['symbol'],
+                        ltp = option['ltp'],
+                        close = option['close'],
+                        open = option['open'],
+                        high = option['high'],
+                        low = option['low'],
+                        vtt = option['vtt'],
+                        atp = option['atp'],
+                        oi = option['oi'],
+                        spot_price = option['spot_price'],
+                        total_buy_qty = option['total_buy_qty'],
+                        total_sell_qty = option['total_sell_qty'],
+                        lower_circuit = option['lower_circuit'],
+                        upper_circuit = option['upper_circuit'],
+                        yearly_low = option['yearly_low'],
+                        yearly_high = option['yearly_high'],
+                        ltt = option['ltt']
+                    ).save()
     connection.close()
     return Response({"Message": "Full Quotes Saved"})
 
@@ -234,14 +233,17 @@ def validate_token(request):
 @api_view(['POST'])
 def get_full_quotes(request):
     request_data = json.loads(json.dumps(request.data))
+    access_token = request_data['accessToken']
+    indices = request_data['indices']
+    symbol = request_data['symbol']
     def create_session(request):
-        upstox = Upstox(api_key, request_data['accessToken'])
+        upstox = Upstox(api_key, access_token)
         return upstox         
     def search_equity():
         upstox = create_session(request)
         upstox.get_master_contract(nse_index)
         equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            nse_index, request_data['indices']),
+            nse_index, indices),
             LiveFeedType.Full)
         equity_data = json.loads(json.dumps(equity))
         stock = Instrument(
@@ -251,12 +253,16 @@ def get_full_quotes(request):
         )
         return stock
     def pairing():
-        list_options = Full_Quote.objects.all().order_by('strike_price')
+        list_options = Full_Quote.objects.all()\
+                                         .filter(symbol__startswith=symbol)\
+                                         .order_by('strike_price')
+        def to_lakh(n):
+            return float(round(n/100000, 1))
         option_pairs = []
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
                 # remove strikes which are less than ₹ 10,000 
-                if (round(a.oi/100000,1) > 0.0 and round(b.oi/100000,1) > 0.0):
+                if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
                     # arrange option pair always in CE and PE order
                     if (a.symbol[-2:] == 'CE'):
                         option_pair = (a, b, a.strike_price)

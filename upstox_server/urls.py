@@ -9,7 +9,7 @@ urlpatterns = [
     path('accesstoken/', get_access_token),
     path('saveoption/', save_option),
     path('searchsymbol/', search_symbol),
-    path('cacehefullquotes/', cache_full_quotes_redis),
+    path('cachefullquotes/', cache_full_quotes_redis),
     path('savefullquotes/', save_full_quotes_db),
     path('quote/', get_full_quotes),
     path ('validatetoken/', validate_token)

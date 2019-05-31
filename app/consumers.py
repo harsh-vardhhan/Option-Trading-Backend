@@ -30,14 +30,17 @@ class stock_consumer(AsyncWebsocketConsumer):
       await self.accept()
       await self.channel_layer.group_add("stock_group", self.channel_name)
       access_token = self.scope['url_route']['kwargs']['id']
+      symbol = self.scope['url_route']['kwargs']['symbol']
       u = Upstox(api_key, access_token)    
       u.get_master_contract('NSE_FO')
-      list_options = Full_Quote.objects.all().order_by('strike_price')
-
-
+      list_options = Full_Quote.objects.all()\
+                                       .filter(symbol__startswith=symbol)\
+                                       .order_by('strike_price')
+      def to_lakh(n):
+         return float(round(n/100000, 1))
       for a, b in it.combinations(list_options, 2):
          if (a.strike_price == b.strike_price):
-            if float(round(a.oi/100000, 1)) > 0.0 and float(round(b.oi/100000, 1)) > 0.0:
+            if to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0:
                subscribed_key = a.symbol+'_subscribed'
                def get_key():
                   if(r.get(subscribed_key) == None):
@@ -47,13 +50,16 @@ class stock_consumer(AsyncWebsocketConsumer):
                subscribed_access_token = get_key()
                if(r.exists(subscribed_key) == False):      
                      q = Queue(connection=conn)
-                     q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
+                     q.enqueue(instrument_subscribe_queue, 
+                               access_token, 
+                               a.exchange, a.symbol, b.symbol)
                elif(r.exists(subscribed_key) == True
                and subscribed_access_token != access_token):
                      q = Queue(connection=conn)
-                     q.enqueue(instrument_subscribe_queue, access_token, a.exchange, a.symbol, b.symbol)
-      connection.close()
-      
+                     q.enqueue(instrument_subscribe_queue, 
+                               access_token, 
+                               a.exchange, a.symbol, b.symbol)
+      connection.close()   
       u.start_websocket(True)
       def quote_update(message):
          stock_consumer.send_message(self, message)
