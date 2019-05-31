@@ -19,6 +19,7 @@ import pdb
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
+
 # ws://localhost:8000/ws/access_token/
 # Use POST method to get the skeleton and WebSocket to feed independent cells
 class stock_consumer(AsyncWebsocketConsumer):
@@ -36,7 +37,7 @@ class stock_consumer(AsyncWebsocketConsumer):
 
       for a, b in it.combinations(list_options, 2):
          if (a.strike_price == b.strike_price):
-            if int(a.oi) > 0 and int(b.oi) > 0:
+            if float(round(a.oi/100000, 1)) > 0.0 and float(round(b.oi/100000, 1)) > 0.0:
                subscribed_key = a.symbol+'_subscribed'
                def get_key():
                   if(r.get(subscribed_key) == None):
