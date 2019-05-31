@@ -25,8 +25,7 @@ redirect_uri = 'https://www.explainoid.com/home'
 secret_key = 'pqmnwsq8ja'
 master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
-nse_index = 'NSE_INDEX' 
-symbol = 'RELIANCE'
+nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 expiry_date = "19JUN"
@@ -41,29 +40,13 @@ def get_redirect_url(request):
 
 @api_view(['POST'])
 def get_access_token(request):
-    request_code = json.dumps(request.data)
-    request_code_data = json.loads(request_code)
+    request_data = json.loads(json.dumps(request.data))
     session = Session(api_key)
     session.set_redirect_uri(redirect_uri)
     session.set_api_secret(secret_key)
-    session.set_code(request_code_data['requestcode'])
+    session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
     return Response({"accessToken": access_token})
-
-@api_view(['POST'])
-def search_symbol(request):
-    post_request = json.dumps(request.data)
-    post_request_data = json.loads(post_request)
-    upstox = Upstox(api_key, post_request_data['accessToken'])
-    def obj_dict(obj):
-        return obj.__dict__
-    upstox.get_master_contract(master_contract_FO)
-    search_list = upstox.search_instruments(
-        master_contract_FO,
-        post_request_data['searchSymbol'])
-    search_list_dump = json.dumps(search_list, default=obj_dict)
-    search_list_load = json.loads(search_list_dump)
-    return Response({"search": search_list_load})
 
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
@@ -238,7 +221,7 @@ def get_full_quotes(request):
     symbol = request_data['symbol']
     def create_session(request):
         upstox = Upstox(api_key, access_token)
-        return upstox         
+        return upstox
     def search_equity():
         upstox = create_session(request)
         upstox.get_master_contract(nse_index)
@@ -274,15 +257,9 @@ def get_full_quotes(request):
         return option_pairs
     def obj_dict(obj):
         return obj.__dict__
-    def stock_to_json():
-        stock_dump = json.dumps(search_equity(), default=obj_dict)
-        stock_load = json.loads(stock_dump)
-        return stock_load
-    def option_to_json():
-        options_dump = json.dumps(pairing(), default=obj_dict)
-        options_load = json.loads(options_dump)
-        return options_load
+    def toJson(func):
+        return json.loads(json.dumps(func, default=obj_dict))
     return Response({
-        "Stock": stock_to_json(),
-        "Options": option_to_json()
+        "Stock": toJson(search_equity()),
+        "Options": toJson(pairing()),
     })
