@@ -30,11 +30,10 @@ class stock_consumer(AsyncWebsocketConsumer):
       await self.accept()
       await self.channel_layer.group_add("stock_group", self.channel_name)
       access_token = self.scope['url_route']['kwargs']['id']
-      symbol = self.scope['url_route']['kwargs']['symbol']
+      #symbol = self.scope['url_route']['kwargs']['symbol']
       u = Upstox(api_key, access_token)    
       u.get_master_contract('NSE_FO')
       list_options = Full_Quote.objects.all()\
-                                       .filter(symbol__startswith=symbol)\
                                        .order_by('strike_price')
       def to_lakh(n):
          return float(round(n/100000, 1))
