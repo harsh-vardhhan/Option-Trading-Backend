@@ -148,8 +148,8 @@ def cache_full_quotes_redis(request):
             # This has been done to differentiate between NIFTY and BANKNIFTY
             print("This has been done to differentiate between NIFTY and BANKNIFTY")
             symbol_fetched = ops.symbol[:symbol_len]
+            print(symbol_fetched.upper(), symbol)
             if (symbol_fetched.upper() == symbol):
-                print(symbol_fetched.upper(), symbol)
                 # This is to fetch Monthly Options only
                 print("This is to fetch Monthly Options only")
                 trim_symbol = ops.symbol[symbol_len:]
