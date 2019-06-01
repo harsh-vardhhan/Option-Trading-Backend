@@ -146,12 +146,15 @@ def cache_full_quotes_redis(request):
         symbol_len = len(symbol)
         for ops in list_options:
             # This has been done to differentiate between NIFTY and BANKNIFTY
+            print("This has been done to differentiate between NIFTY and BANKNIFTY")
             symbol_fetched = ops.symbol[:symbol_len]
             if (symbol_fetched.upper() == symbol):
                 # This is to fetch Monthly Options only
+                print("This is to fetch Monthly Options only")
                 trim_symbol = ops.symbol[symbol_len:]
                 expiry_date_fetched = trim_symbol[:len(expiry_date)] 
                 if(expiry_date_fetched.upper() == expiry_date):
+                    print(expiry_date_fetched.upper(), expiry_date)
                     q.enqueue(full_quotes_queue, access_token, ops.symbol)
     return Response({"Message": "Quotes Saved"})
 
