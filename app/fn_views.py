@@ -265,6 +265,6 @@ def get_full_quotes(request):
     def toJson(func):
         return json.loads(json.dumps(func, default=obj_dict))
     return Response({
-        "Stock": toJson(search_equity()),
-        "Options": toJson(pairing()),
+        "stock": toJson(search_equity()),
+        "options": toJson(pairing()),
     })
