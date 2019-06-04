@@ -172,6 +172,7 @@ def save_full_quotes_db(request):
     Full_Quote.objects.all().delete()
     for symbol in symbols:
         for ops in list_option:
+            print(ops.symbol)
             # This has been done to differentiate between NIFTY and BANKNIFTY
             symbol_len = len(symbol)
             symbol_cache = ops.symbol[:symbol_len]
