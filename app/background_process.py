@@ -12,6 +12,7 @@ master_contract_FO = 'NSE_FO'
 
 
 def full_quotes_queue(accessToken, symbol):
+    sleep(2)
     upstox = Upstox(api_key, accessToken)
     upstox.get_master_contract(master_contract_FO)
     option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
