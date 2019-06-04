@@ -61,6 +61,7 @@ class stock_consumer(AsyncWebsocketConsumer):
       connection.close()   
       u.start_websocket(True)
       def quote_update(message):
+         print(message)
          stock_consumer.send_message(self, message)
       u.set_on_quote_update(quote_update)
 
