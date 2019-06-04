@@ -172,7 +172,6 @@ def save_full_quotes_db(request):
     Full_Quote.objects.all().delete()
     for symbol in symbols:
         for ops in list_option:
-            print(ops.symbol, ops.strike_price)
             # This has been done to differentiate between NIFTY and BANKNIFTY
             symbol_len = len(symbol)
             symbol_cache = ops.symbol[:symbol_len]
@@ -181,6 +180,7 @@ def save_full_quotes_db(request):
                 trim_symbol = ops.symbol[symbol_len:]
                 symbol_date = trim_symbol[:len(expiry_date)]
                 if (symbol_date.upper() == expiry_date):
+                    print(ops.symbol, ops.strike_price)
                     val = r.get(ops.symbol).decode("utf-8")
                     option = ast.literal_eval(val)
                     Full_Quote(
