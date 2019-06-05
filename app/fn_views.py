@@ -178,8 +178,9 @@ def save_full_quotes_db(request):
                 trim_symbol = ops.symbol[symbol_len:]
                 symbol_date = trim_symbol[:len(expiry_date)]
                 if (symbol_date.upper() == expiry_date):
-                    print("test", ops.symbol)
-                    val = r.get(ops.symbol).decode("utf-8")
+                    symbol_key = r.get(ops.symbol)
+                    print(symbol_key)
+                    val = symbol_key.decode("utf-8")
                     option = ast.literal_eval(val)
                     Full_Quote(
                         strike_price = ops.strike_price,
