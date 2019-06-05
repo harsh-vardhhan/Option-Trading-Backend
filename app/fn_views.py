@@ -27,7 +27,7 @@ master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
-symbols = ['NIFTY','BANKNIFTY']
+symbols = ['BANKNIFTY', 'NIFTY']
 expiry_date = "19JUN"
 
 @api_view()
