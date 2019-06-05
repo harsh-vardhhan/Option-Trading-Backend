@@ -179,30 +179,30 @@ def save_full_quotes_db(request):
                 symbol_date = trim_symbol[:len(expiry_date)]
                 if (symbol_date.upper() == expiry_date):
                     symbol_key = r.get(ops.symbol)
-                    print(symbol_key)
-                    val = symbol_key.decode("utf-8")
-                    option = ast.literal_eval(val)
-                    Full_Quote(
-                        strike_price = ops.strike_price,
-                        exchange = option['exchange'],
-                        symbol = option['symbol'],
-                        ltp = option['ltp'],
-                        close = option['close'],
-                        open = option['open'],
-                        high = option['high'],
-                        low = option['low'],
-                        vtt = option['vtt'],
-                        atp = option['atp'],
-                        oi = option['oi'],
-                        spot_price = option['spot_price'],
-                        total_buy_qty = option['total_buy_qty'],
-                        total_sell_qty = option['total_sell_qty'],
-                        lower_circuit = option['lower_circuit'],
-                        upper_circuit = option['upper_circuit'],
-                        yearly_low = option['yearly_low'],
-                        yearly_high = option['yearly_high'],
-                        ltt = option['ltt']
-                    ).save()
+                    if (symbol_key != None):
+                        val = symbol_key.decode("utf-8")
+                        option = ast.literal_eval(val)
+                        Full_Quote(
+                            strike_price = ops.strike_price,
+                            exchange = option['exchange'],
+                            symbol = option['symbol'],
+                            ltp = option['ltp'],
+                            close = option['close'],
+                            open = option['open'],
+                            high = option['high'],
+                            low = option['low'],
+                            vtt = option['vtt'],
+                            atp = option['atp'],
+                            oi = option['oi'],
+                            spot_price = option['spot_price'],
+                            total_buy_qty = option['total_buy_qty'],
+                            total_sell_qty = option['total_sell_qty'],
+                            lower_circuit = option['lower_circuit'],
+                            upper_circuit = option['upper_circuit'],
+                            yearly_low = option['yearly_low'],
+                            yearly_high = option['yearly_high'],
+                            ltt = option['ltt']
+                        ).save()
     connection.close()
     return Response({"Message": "Full Quotes Saved"})
 
