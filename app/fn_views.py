@@ -1,6 +1,6 @@
 from rest_framework.decorators import api_view
 from rest_framework.views import Response
-from upstox_api.api import Session, Upstox, LiveFeedType
+from upstox_api.api import Session, Upstox, LiveFeedType, OHLCInterval
 import json
 import itertools as it
 from app.models import Instrument, Full_Quote
@@ -11,11 +11,13 @@ from time import sleep
 from rq import Queue
 from worker import conn
 from app.background_process import full_quotes_queue
+from statistics import stdev
 from django.db import connection
 import requests
 import ast
 import os
 import redis
+from math import sqrt
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
@@ -48,6 +50,43 @@ def get_access_token(request):
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
     return Response({"accessToken": access_token})
+
+@api_view(['POST'])
+def historical_option(request):
+    request_data = json.loads(json.dumps(request.data))
+    access_token = request_data['accessToken']
+    def create_session(request):
+        upstox = Upstox(api_key, access_token)
+        return upstox
+    def fetch_option():
+        upstox = create_session(request)
+        upstox.get_master_contract(nse_index)
+        historical =  upstox.get_ohlc(
+            upstox.get_instrument_by_symbol(nse_index, 'NIFTY_50'), 
+            OHLCInterval.Day_1, datetime.strptime('06/06/2018', '%d/%m/%Y').date(), 
+            datetime.strptime('06/06/2019', '%d/%m/%Y').date()
+        )
+        historical_array = []
+        for ops in historical:
+             symbol = json.loads(json.dumps(ops))
+             date = (datetime.fromtimestamp(int(symbol['timestamp'])/1000))
+             closing = symbol['close']
+             option_data = (date, closing)
+             historical_array.append(option_data)
+        return historical_array
+    def historic_sigma():
+        option_list = fetch_option()
+        ltp_changes = []
+        old_close = 0.0
+        for idx, ops in enumerate(option_list):
+            if(idx > 0):
+                ltp_change_val = (float(ops[1])/float(old_close)) - 1.0
+                ltp_changes.append(ltp_change_val)
+            old_close = ops[1]
+        historic_sigma = stdev(ltp_changes)* sqrt(252) * 100
+    ltp_change()
+    return Response({"historical": (fetch_option())})
+    
 
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
@@ -267,4 +306,5 @@ def get_full_quotes(request):
     return Response({
         "stock": toJson(search_equity()),
         "options": toJson(pairing()),
+        "symbol": symbol
     })

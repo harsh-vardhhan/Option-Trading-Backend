@@ -7,7 +7,8 @@ from app.fn_views import (
     cache_full_quotes_redis, 
     save_full_quotes_db, 
     get_full_quotes, 
-    validate_token
+    validate_token,
+    historical_option
 )
 
 router = DefaultRouter()
@@ -19,7 +20,8 @@ urlpatterns = [
     path('cachefullquotes/', cache_full_quotes_redis),
     path('savefullquotes/', save_full_quotes_db),
     path('quote/', get_full_quotes),
-    path ('validatetoken/', validate_token)
+    path('validatetoken/', validate_token),
+    path('historical/', historical_option)
 ]
 
 urlpatterns += router.urls
