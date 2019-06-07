@@ -299,6 +299,26 @@ def get_full_quotes(request):
                         option_pairs.append(option_pair)
         connection.close()
         return option_pairs
+    def closest_strike():
+        list_options = Full_Quote.objects.all()\
+                                         .filter(symbol__startswith=symbol)\
+                                         .order_by('strike_price')
+        def to_lakh(n):
+            return float(round(n/100000, 1))
+        closest_strike = 10000000
+        closest_option = ""
+        equity = search_equity()
+        for a, b in it.combinations(list_options, 2):
+            if (a.strike_price == b.strike_price):
+                # remove strikes which are less than ₹ 10,000 
+                if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
+                    # arrange option pair always in CE and PE order
+                    diff = abs(float(equity.name) - float(a.strike_price))
+                    if(diff < closest_strike):
+                        closest_strike = diff
+                        closest_option = a
+        return closest_option
+        connection.close()        
     def obj_dict(obj):
         return obj.__dict__
     def toJson(func):
@@ -306,5 +326,6 @@ def get_full_quotes(request):
     return Response({
         "stock": toJson(search_equity()),
         "options": toJson(pairing()),
-        "symbol": symbol
+        "symbol": symbol,
+        "closest_strike" : toJson(closest_strike())
     })
