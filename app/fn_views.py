@@ -4,7 +4,7 @@ from upstox_api.api import Session, Upstox, LiveFeedType, OHLCInterval
 import json
 import itertools as it
 from app.models import Instrument, Full_Quote
-from datetime import datetime
+from datetime import datetime, date
 import calendar
 from dateutil import relativedelta
 from time import sleep
@@ -31,6 +31,8 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['BANKNIFTY', 'NIFTY']
 expiry_date = "19JUN"
+current_month_expiry = date(2019, 6, 27)
+next_month_expirt = date(2019, 7, 25)
 
 @api_view()
 def get_redirect_url(request):
@@ -115,7 +117,7 @@ def save_option(request):
         all_options = []
         Instrument.objects.all().delete()
         for symbol in symbols:
-            for ops in search_options(symbol):
+            for ops in search_options(symbol):          
                 expiry = int(ops[6])
                 exchange_val = ops[0]
                 token_val = ops[1]
@@ -129,6 +131,7 @@ def save_option(request):
                 lot_size_val = ops[9]
                 instrument_type_val = ops[10]
                 isin_val = ops[11]
+                print(symbol_val)
                 if strike_price_val != None:
                     if closing_price_val != None:
                         # Avoid NIFTYIT since searching for 
@@ -273,12 +276,20 @@ def get_full_quotes(request):
             nse_index, indices),
             LiveFeedType.Full)
         equity_data = json.loads(json.dumps(equity))
+        print(equity_data)
         stock = Instrument(
             equity_data['exchange'], "", "", 
             equity_data['symbol'], "", 
             equity_data['ltp'], "", 0.0, "", "", "", ""
         )
         return stock
+    def search_future():
+        upstox = create_session(request)
+        upstox.get_master_contract(master_contract_FO)
+        future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+            master_contract_FO, symbol+expiry_date+'FUT'),
+            LiveFeedType.Full)
+        return future
     def pairing():
         list_options = Full_Quote.objects.all()\
                                          .filter(symbol__startswith=symbol)\
@@ -289,12 +300,16 @@ def get_full_quotes(request):
         closest_strike = 10000000
         closest_option = ""
         equity = search_equity()
+        call_OI = 0.0
+        put_OI = 0.0
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
                 # remove strikes which are less than ₹ 10,000 
                 if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
                     # arrange option pair always in CE and PE order
                     diff = abs(float(equity.name) - float(a.strike_price))
+                    call_OI = call_OI + to_lakh(a.oi)
+                    put_OI = put_OI + to_lakh(b.oi)
                     if(diff < closest_strike):
                         closest_strike = diff
                         closest_option = a
@@ -304,9 +319,20 @@ def get_full_quotes(request):
                     else:
                         option_pair = (b, a, a.strike_price)
                         option_pairs.append(option_pair)
+        pcr = round(put_OI/call_OI, 2)
         connection.close()
-        return option_pairs, closest_option
-    option_pairs, closest_option = pairing()
+        return option_pairs, closest_option, pcr
+    option_pairs, closest_option, pcr = pairing()
+    def lot_size(symbol):
+        if (symbol == "NIFTY"):
+            return 75
+        elif ("BANKNIFTY"):
+            return 20
+    def days_to_expiry():
+        d1 = date.today()
+        d2 = current_month_expiry
+        d = d2 - d1
+        return d.days
     def obj_dict(obj):
         return obj.__dict__
     def toJson(func):
@@ -315,5 +341,9 @@ def get_full_quotes(request):
         "stock": toJson(search_equity()),
         "options": toJson(option_pairs),
         "symbol": symbol,
-        "closest_strike" : toJson(closest_option)
+        "closest_strike" : toJson(closest_option),
+        "future": toJson(search_future()),
+        "lot_size": toJson(lot_size(symbol)),
+        "days_to_expiry": days_to_expiry(),
+        "pcr": pcr
     })
