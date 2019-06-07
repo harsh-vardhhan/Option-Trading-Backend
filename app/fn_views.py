@@ -286,25 +286,6 @@ def get_full_quotes(request):
         def to_lakh(n):
             return float(round(n/100000, 1))
         option_pairs = []
-        for a, b in it.combinations(list_options, 2):
-            if (a.strike_price == b.strike_price):
-                # remove strikes which are less than ₹ 10,000 
-                if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
-                    # arrange option pair always in CE and PE order
-                    if (a.symbol[-2:] == 'CE'):
-                        option_pair = (a, b, a.strike_price)
-                        option_pairs.append(option_pair)
-                    else:
-                        option_pair = (b, a, a.strike_price)
-                        option_pairs.append(option_pair)
-        connection.close()
-        return option_pairs
-    def closest_strike():
-        list_options = Full_Quote.objects.all()\
-                                         .filter(symbol__startswith=symbol)\
-                                         .order_by('strike_price')
-        def to_lakh(n):
-            return float(round(n/100000, 1))
         closest_strike = 10000000
         closest_option = ""
         equity = search_equity()
@@ -317,15 +298,22 @@ def get_full_quotes(request):
                     if(diff < closest_strike):
                         closest_strike = diff
                         closest_option = a
-        return closest_option
-        connection.close()        
+                    if (a.symbol[-2:] == 'CE'):
+                        option_pair = (a, b, a.strike_price)
+                        option_pairs.append(option_pair)
+                    else:
+                        option_pair = (b, a, a.strike_price)
+                        option_pairs.append(option_pair)
+        connection.close()
+        return option_pairs, closest_option
+    option_pairs, closest_option = pairing()
     def obj_dict(obj):
         return obj.__dict__
     def toJson(func):
         return json.loads(json.dumps(func, default=obj_dict))
     return Response({
         "stock": toJson(search_equity()),
-        "options": toJson(pairing()),
+        "options": toJson(option_pairs),
         "symbol": symbol,
-        "closest_strike" : toJson(closest_strike())
+        "closest_strike" : toJson(closest_option)
     })
