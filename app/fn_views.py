@@ -222,6 +222,7 @@ def save_full_quotes_db(request):
                 if (symbol_date.upper() == expiry_date):
                     symbol_key = r.get(ops.symbol)
                     if (symbol_key != None):
+                        print(ops.symbol)
                         val = symbol_key.decode("utf-8")
                         option = ast.literal_eval(val)
                         Full_Quote(
