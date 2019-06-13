@@ -193,20 +193,20 @@ def save_option(request):
                                                     lot_size_val,
                                                     instrument_type_val,
                                                     isin_val)
-                                else:
-                                    save_option_db(expiry,
-                                                    exchange_val,
-                                                    token_val,
-                                                    parent_token_val,
-                                                    symbol_val,
-                                                    name_val,
-                                                    closing_price_val,
-                                                    expiry_val,
-                                                    strike_price_val,
-                                                    tick_size_val,
-                                                    lot_size_val,
-                                                    instrument_type_val,
-                                                    isin_val)               
+                            else:
+                                save_option_db(expiry,
+                                                exchange_val,
+                                                token_val,
+                                                parent_token_val,
+                                                symbol_val,
+                                                name_val,
+                                                closing_price_val,
+                                                expiry_val,
+                                                strike_price_val,
+                                                tick_size_val,
+                                                lot_size_val,
+                                                instrument_type_val,
+                                                isin_val)               
         return all_options
     list_options()
     return Response({"Message": "Options Saved"})
