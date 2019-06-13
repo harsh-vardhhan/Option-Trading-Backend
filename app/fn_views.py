@@ -131,7 +131,8 @@ def save_option(request):
                 lot_size_val = ops[9]
                 instrument_type_val = ops[10]
                 isin_val = ops[11]
-                print(symbol_val)
+                if (symbol_val == "banknifty19jun27000ce"):
+                    print(symbol_val)
                 if strike_price_val != None:
                     if closing_price_val != None:
                         # Avoid NIFTYIT since searching for 
