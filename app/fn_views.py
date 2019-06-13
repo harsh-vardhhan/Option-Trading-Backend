@@ -131,8 +131,6 @@ def save_option(request):
                 lot_size_val = ops[9]
                 instrument_type_val = ops[10]
                 isin_val = ops[11]
-                if (symbol_val == "banknifty19jun27000ce"):
-                    print(symbol_val)
                 if strike_price_val != None:
                     if closing_price_val != None:
                         # Avoid NIFTYIT since searching for 
@@ -146,6 +144,8 @@ def save_option(request):
                                         isin_val = ''
                                 if ops[7] is None:
                                         strike_price_val = ''
+                                if (symbol_val == "banknifty19jun27000ce"):
+                                    symbol_val
                                 Instrument(
                                     exchange = exchange_val, 
                                     token = token_val,
@@ -191,13 +191,12 @@ def cache_full_quotes_redis(request):
         for ops in list_options:
             # This has been done to differentiate between NIFTY and BANKNIFTY
             symbol_fetched = ops.symbol[:symbol_len]
-            print(symbol_fetched.upper(), symbol)
             if (symbol_fetched.upper() == symbol):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
                 expiry_date_fetched = trim_symbol[:len(expiry_date)] 
                 if(expiry_date_fetched.upper() == expiry_date):
-                    print(expiry_date_fetched.upper(), expiry_date)
+                    print(ops.symbol)
                     q.enqueue(full_quotes_queue, access_token, ops.symbol)
     return Response({"Message": "Quotes Saved"})
 
