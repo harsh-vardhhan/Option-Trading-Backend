@@ -196,7 +196,8 @@ def cache_full_quotes_redis(request):
                 trim_symbol = ops.symbol[symbol_len:]
                 expiry_date_fetched = trim_symbol[:len(expiry_date)] 
                 if(expiry_date_fetched.upper() == expiry_date):
-                    print(ops.symbol)
+                    if (ops.symbol == "banknifty19jun30500ce"):
+                        print(ops.symbol)
                     q.enqueue(full_quotes_queue, access_token, ops.symbol)
     return Response({"Message": "Quotes Saved"})
 
@@ -222,8 +223,6 @@ def save_full_quotes_db(request):
                 if (symbol_date.upper() == expiry_date):
                     symbol_key = r.get(ops.symbol)
                     if (symbol_key != None):
-                        if (ops.symbol == "banknifty19jun30500ce"):
-                            print(ops.symbol)
                         val = symbol_key.decode("utf-8")
                         option = ast.literal_eval(val)
                         Full_Quote(
