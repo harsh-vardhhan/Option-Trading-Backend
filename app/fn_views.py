@@ -164,8 +164,6 @@ def save_option(request):
                                         ops[5], ops[6], ops[7], ops[8], ops[9],
                                         ops[10], ops[11]
                                     ))
-                            # This has been done to ensure BANKNIFTY is not 
-                            # fetch when searched for NIFTY
                             if symbol == "NIFTY":
                                 symbol_len = len(symbol)
                                 symbol_cache = symbol_val[:symbol_len]
