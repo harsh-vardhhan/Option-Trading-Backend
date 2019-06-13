@@ -168,9 +168,33 @@ def save_option(request):
                                 symbol_len = len(symbol)
                                 symbol_cache = symbol_val[:symbol_len]
                                 if symbol == symbol_cache.upper():
-                                    save_option_db(closing_price_val)
-                            else:
-                                save_option_db(closing_price_val)               
+                                    save_option_db(expiry,
+                                                    exchange_val,
+                                                    token_val,
+                                                    parent_token_val,
+                                                    symbol_val,
+                                                    name_val,
+                                                    closing_price_val,
+                                                    expiry_val,
+                                                    strike_price_val,
+                                                    tick_size_val,
+                                                    lot_size_val,
+                                                    instrument_type_val,
+                                                    isin_val)
+                                else:
+                                    save_option_db(expiry,
+                                                    exchange_val,
+                                                    token_val,
+                                                    parent_token_val,
+                                                    symbol_val,
+                                                    name_val,
+                                                    closing_price_val,
+                                                    expiry_val,
+                                                    strike_price_val,
+                                                    tick_size_val,
+                                                    lot_size_val,
+                                                    instrument_type_val,
+                                                    isin_val)               
         return all_options
     list_options()
     return Response({"Message": "Options Saved"})
