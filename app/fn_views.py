@@ -137,7 +137,7 @@ def save_option(request):
                         # NIFTY and BANKNIFTY alongs brings
                         # along this and it lacks liquidity
                         if symbol_val[:7] != niftyit:
-                            def save_option_db():
+                            def save_option_db(closing_price_val):
                                 if expiry >= get_first_date() and expiry <= get_last_date():
                                     if ops[5] is None:
                                             closing_price_val = ''
@@ -168,9 +168,9 @@ def save_option(request):
                                 symbol_len = len(symbol)
                                 symbol_cache = symbol_val[:symbol_len]
                                 if symbol == symbol_cache.upper():
-                                    save_option_db()
+                                    save_option_db(closing_price_val)
                             else:
-                                save_option_db()               
+                                save_option_db(closing_price_val)               
         return all_options
     list_options()
     return Response({"Message": "Options Saved"})
