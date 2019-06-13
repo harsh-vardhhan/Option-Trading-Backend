@@ -136,6 +136,7 @@ def save_option(request):
                         # Avoid NIFTYIT since searching for 
                         # NIFTY and BANKNIFTY alongs brings
                         # along this and it lacks liquidity
+                        print(symbol_val)
                         if symbol_val[:7] != niftyit:
                             def save_option_db(expiry,
                                                 exchange_val,
