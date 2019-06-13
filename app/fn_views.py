@@ -146,6 +146,7 @@ def save_option(request):
                                         strike_price_val = ''
                                 if (symbol_val == "banknifty19jun30500ce"):
                                     print(symbol_val)
+                                    print(ops)
                                 Instrument(
                                     exchange = exchange_val, 
                                     token = token_val,
