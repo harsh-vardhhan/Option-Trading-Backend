@@ -176,7 +176,7 @@ def save_option(request):
                                         ops[5], ops[6], ops[7], ops[8], ops[9],
                                         ops[10], ops[11]
                                     ))
-                            if symbol == "NIFTY":
+                            if symbol_val == symbol:
                                 symbol_len = len(symbol)
                                 symbol_cache = symbol_val[:symbol_len]
                                 if symbol == symbol_cache.upper():
