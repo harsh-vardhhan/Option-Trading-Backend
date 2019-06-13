@@ -29,7 +29,7 @@ master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
-symbols = ['BANKNIFTY']
+symbols = ['NIFTY','BANKNIFTY']
 expiry_date = "19JUN"
 current_month_expiry = date(2019, 6, 27)
 next_month_expirt = date(2019, 7, 25)
@@ -137,6 +137,12 @@ def save_option(request):
                         # NIFTY and BANKNIFTY alongs brings
                         # along this and it lacks liquidity
                         if symbol_val[:7] != niftyit:
+                            
+                            if symbol == "NIFTY":
+                                symbol_len = len(symbol)
+                                symbol_cache = symbol_val[:symbol_len]
+                                print(symbol,symbol_cache.upper())
+
                             if expiry >= get_first_date() and expiry <= get_last_date():
                                 if ops[5] is None:
                                         closing_price_val = ''
@@ -144,9 +150,6 @@ def save_option(request):
                                         isin_val = ''
                                 if ops[7] is None:
                                         strike_price_val = ''
-                                if (symbol_val == "banknifty19jun30500ce"):
-                                    print(symbol_val)
-                                    print(ops)
                                 Instrument(
                                     exchange = exchange_val, 
                                     token = token_val,
@@ -276,7 +279,6 @@ def get_full_quotes(request):
             nse_index, indices),
             LiveFeedType.Full)
         equity_data = json.loads(json.dumps(equity))
-        print(equity_data)
         stock = Instrument(
             equity_data['exchange'], "", "", 
             equity_data['symbol'], "", 
