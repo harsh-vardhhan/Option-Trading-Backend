@@ -186,7 +186,7 @@ def cache_full_quotes_redis(request):
     upstox = create_session(access_token)
     upstox.get_master_contract(master_contract_FO)
     # symbol = request_data['symbol']
-    for symbol in symbols: 
+    for symbol in symbols:
         symbol_len = len(symbol)
         for ops in list_options:
             # This has been done to differentiate between NIFTY and BANKNIFTY
@@ -222,7 +222,8 @@ def save_full_quotes_db(request):
                 if (symbol_date.upper() == expiry_date):
                     symbol_key = r.get(ops.symbol)
                     if (symbol_key != None):
-                        print(ops.symbol)
+                        if (ops.symbol == "banknifty19jun30500ce"):
+                            print(ops.symbol)
                         val = symbol_key.decode("utf-8")
                         option = ast.literal_eval(val)
                         Full_Quote(
