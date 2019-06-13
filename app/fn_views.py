@@ -137,38 +137,42 @@ def save_option(request):
                         # NIFTY and BANKNIFTY alongs brings
                         # along this and it lacks liquidity
                         if symbol_val[:7] != niftyit:
-                            
+                            def save_option_db():
+                                if expiry >= get_first_date() and expiry <= get_last_date():
+                                    if ops[5] is None:
+                                            closing_price_val = ''
+                                    if ops[11] is None:
+                                            isin_val = ''
+                                    if ops[7] is None:
+                                            strike_price_val = ''
+                                    Instrument(
+                                        exchange = exchange_val, 
+                                        token = token_val,
+                                        parent_token = parent_token_val, 
+                                        symbol = symbol_val, 
+                                        name = name_val,
+                                        closing_price = closing_price_val,
+                                        expiry = expiry_val,
+                                        strike_price = float(strike_price_val), 
+                                        tick_size = tick_size_val, 
+                                        lot_size = lot_size_val,
+                                        instrument_type = instrument_type_val, 
+                                        isin = isin_val
+                                    ).save()
+                                    all_options.append(Instrument(
+                                        ops[0], ops[1], ops[2], ops[3], ops[4],
+                                        ops[5], ops[6], ops[7], ops[8], ops[9],
+                                        ops[10], ops[11]
+                                    ))
+                            # This has been done to ensure BANKNIFTY is not 
+                            # fetch when searched for NIFTY
                             if symbol == "NIFTY":
                                 symbol_len = len(symbol)
                                 symbol_cache = symbol_val[:symbol_len]
-                                print(symbol,symbol_cache.upper())
-
-                            if expiry >= get_first_date() and expiry <= get_last_date():
-                                if ops[5] is None:
-                                        closing_price_val = ''
-                                if ops[11] is None:
-                                        isin_val = ''
-                                if ops[7] is None:
-                                        strike_price_val = ''
-                                Instrument(
-                                    exchange = exchange_val, 
-                                    token = token_val,
-                                    parent_token = parent_token_val, 
-                                    symbol = symbol_val, 
-                                    name = name_val,
-                                    closing_price = closing_price_val,
-                                    expiry = expiry_val,
-                                    strike_price = float(strike_price_val), 
-                                    tick_size = tick_size_val, 
-                                    lot_size = lot_size_val,
-                                    instrument_type = instrument_type_val, 
-                                    isin = isin_val
-                                ).save()
-                                all_options.append(Instrument(
-                                    ops[0], ops[1], ops[2], ops[3], ops[4],
-                                    ops[5], ops[6], ops[7], ops[8], ops[9],
-                                    ops[10], ops[11]
-                                ))
+                                if symbol == symbol_cache.upper():
+                                    save_option_db()
+                            else:
+                                save_option_db()               
         return all_options
     list_options()
     return Response({"Message": "Options Saved"})
