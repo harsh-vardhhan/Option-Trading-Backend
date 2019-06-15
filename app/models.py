@@ -34,3 +34,8 @@ class Full_Quote(models.Model):
     yearly_low = models.CharField(max_length=40)
     yearly_high = models.CharField(max_length=40)
     ltt = models.CharField(max_length=40)
+
+class Expiry_Date(models.Model):
+    upstox_date = models.CharField(max_length=40)
+    expiry_date = models.CharField(max_length=40)
+    label_date = models.CharField(max_length=40)

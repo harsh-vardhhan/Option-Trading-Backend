@@ -3,7 +3,7 @@ from rest_framework.views import Response
 from upstox_api.api import Session, Upstox, LiveFeedType, OHLCInterval
 import json
 import itertools as it
-from app.models import Instrument, Full_Quote
+from app.models import Instrument, Full_Quote, Expiry_Date
 from datetime import datetime, date
 import calendar
 from dateutil import relativedelta
@@ -30,6 +30,7 @@ master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
+expiry_dates = ['19JUN','19JUL']
 expiry_date = "19JUN"
 current_month_expiry = date(2019, 6, 27)
 next_month_expirt = date(2019, 7, 25)
@@ -88,8 +89,21 @@ def historical_option(request):
         historic_sigma = stdev(ltp_changes)* sqrt(252) * 100
     ltp_change()
     return Response({"historical": (fetch_option())})
-    
 
+
+def expiry_dates_list():
+    Expiry_Date.objects.all().delete()
+    Expiry_Date(
+        upstox_date = "19JUN",
+        expiry_date = str(date(2019, 6, 27))
+    ).save()
+    Expiry_Date(
+        upstox_date = "19JUL",
+        expiry_date = str(date(2019, 7, 25))
+    ).save()
+    expiry_dates = Expiry_Date.objects.all()
+    return expiry_dates
+ 
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
 def save_option(request):
@@ -109,7 +123,7 @@ def save_option(request):
             first_day_date = datetime(today.year, today.month, 1).timestamp() * 1000
             return first_day_date
         def get_last_date():
-            today = datetime.now().today() + relativedelta.relativedelta(weeks=1)
+            today = datetime.now().today() + relativedelta.relativedelta(months=1)
             last_day = calendar.monthrange(today.year, today.month)[1]
             last_day_date = datetime(today.year, today.month, last_day).timestamp() * 1000
             return last_day_date
@@ -136,7 +150,6 @@ def save_option(request):
                         # Avoid NIFTYIT since searching for 
                         # NIFTY and BANKNIFTY alongs brings
                         # along this and it lacks liquidity
-                        print(symbol_val)
                         if symbol_val[:7] != niftyit:
                             def save_option_db(expiry,
                                                 exchange_val,
@@ -237,10 +250,11 @@ def cache_full_quotes_redis(request):
             if (symbol_fetched.upper() == symbol):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
-                expiry_date_fetched = trim_symbol[:len(expiry_date)] 
-                if(expiry_date_fetched.upper() == expiry_date):
-                    q.enqueue(full_quotes_queue, access_token, ops.symbol)
-    return Response({"Message": "Quotes Saved"})
+                for expiry_dated in expiry_dates:
+                    expiry_date_fetched = trim_symbol[:len(expiry_dated)] 
+                    if(expiry_date_fetched.upper() == expiry_dated):
+                        q.enqueue(full_quotes_queue, access_token, ops.symbol)
+    return Response({"Message": "Quotes Saved"}) 
 
 # Step 2: From redis move all the Quotes to database
 @api_view(['POST'])
@@ -260,34 +274,48 @@ def save_full_quotes_db(request):
             if(symbol_cache.upper() == symbol):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
-                symbol_date = trim_symbol[:len(expiry_date)]
-                if (symbol_date.upper() == expiry_date):
-                    symbol_key = r.get(ops.symbol)
-                    if (symbol_key != None):
-                        val = symbol_key.decode("utf-8")
-                        option = ast.literal_eval(val)
-                        Full_Quote(
-                            strike_price = ops.strike_price,
-                            exchange = option['exchange'],
-                            symbol = option['symbol'],
-                            ltp = option['ltp'],
-                            close = option['close'],
-                            open = option['open'],
-                            high = option['high'],
-                            low = option['low'],
-                            vtt = option['vtt'],
-                            atp = option['atp'],
-                            oi = option['oi'],
-                            spot_price = option['spot_price'],
-                            total_buy_qty = option['total_buy_qty'],
-                            total_sell_qty = option['total_sell_qty'],
-                            lower_circuit = option['lower_circuit'],
-                            upper_circuit = option['upper_circuit'],
-                            yearly_low = option['yearly_low'],
-                            yearly_high = option['yearly_high'],
-                            ltt = option['ltt']
-                        ).save()
+                for expiry_date in expiry_dates:
+                    symbol_date = trim_symbol[:len(expiry_date)]
+                    if (symbol_date.upper() == expiry_date):
+                        symbol_key = r.get(ops.symbol)
+                        if (symbol_key != None):
+                            val = symbol_key.decode("utf-8")
+                            option = ast.literal_eval(val)
+                            Full_Quote(
+                                strike_price = ops.strike_price,
+                                exchange = option['exchange'],
+                                symbol = option['symbol'],
+                                ltp = option['ltp'],
+                                close = option['close'],
+                                open = option['open'],
+                                high = option['high'],
+                                low = option['low'],
+                                vtt = option['vtt'],
+                                atp = option['atp'],
+                                oi = option['oi'],
+                                spot_price = option['spot_price'],
+                                total_buy_qty = option['total_buy_qty'],
+                                total_sell_qty = option['total_sell_qty'],
+                                lower_circuit = option['lower_circuit'],
+                                upper_circuit = option['upper_circuit'],
+                                yearly_low = option['yearly_low'],
+                                yearly_high = option['yearly_high'],
+                                ltt = option['ltt']
+                            ).save()
     connection.close()
+    def store_dates():
+        Expiry_Date.objects.all().delete()
+        Expiry_Date(
+            upstox_date = "19JUN",
+            expiry_date = str(date(2019, 6, 27)),
+            label_date = "27 JUNE"
+        ).save()
+        Expiry_Date(
+            upstox_date = "19JUL",
+            expiry_date = str(date(2019, 7, 25)),
+            label_date = "25 JULY"
+        ).save()
+        return list(Expiry_Date.objects.all())
     return Response({"Message": "Full Quotes Saved"})
 
 
@@ -308,6 +336,26 @@ def get_full_quotes(request):
     access_token = request_data['accessToken']
     indices = request_data['indices']
     symbol = request_data['symbol']
+    expiry_date = request_data['expiry_date']
+    days_to_expiry = 0
+    dates = list(Expiry_Date.objects.all())
+    if expiry_date == "0":
+        expiry_date = dates[0].upstox_date
+        d1 = date.today()
+        expiry_date_string = dates[0].expiry_date
+        d2 = datetime.strptime(expiry_date_string, '%Y-%m-%d').date()
+        d = d2 - d1
+        days_to_expiry = d.days
+    else:
+        expiry_date_list = list(Expiry_Date\
+                                    .objects\
+                                    .all()\
+                                    .filter(upstox_date=expiry_date))
+        d1 = date.today()
+        expiry_date_string = expiry_date_list[0].expiry_date
+        d2 = datetime.strptime(expiry_date_string, '%Y-%m-%d').date()
+        d = d2 - d1
+        days_to_expiry = d.days
     def create_session(request):
         upstox = Upstox(api_key, access_token)
         return upstox
@@ -333,7 +381,7 @@ def get_full_quotes(request):
         return future
     def pairing():
         list_options = Full_Quote.objects.all()\
-                                         .filter(symbol__startswith=symbol)\
+                                         .filter(symbol__startswith=symbol+expiry_date)\
                                          .order_by('strike_price')
         def to_lakh(n):
             return float(round(n/100000, 1))
@@ -369,11 +417,6 @@ def get_full_quotes(request):
             return 75
         elif ("BANKNIFTY"):
             return 20
-    def days_to_expiry():
-        d1 = date.today()
-        d2 = current_month_expiry
-        d = d2 - d1
-        return d.days
     def obj_dict(obj):
         return obj.__dict__
     def toJson(func):
@@ -385,6 +428,8 @@ def get_full_quotes(request):
         "closest_strike" : toJson(closest_option),
         "future": toJson(search_future()),
         "lot_size": toJson(lot_size(symbol)),
-        "days_to_expiry": days_to_expiry(),
+        "days_to_expiry": days_to_expiry,
+        "expiry_dates": toJson(dates),
+        "expiry_date": expiry_date,
         "pcr": pcr
     })
