@@ -410,6 +410,8 @@ def get_full_quotes(request):
                     else:
                         option_pair = (b, a, a.strike_price)
                         option_pairs.append(option_pair)
+        if call_OI = 0.0:
+            call_OI = 1.0                
         pcr = round(put_OI/call_OI, 2)
         connection.close()
         return option_pairs, closest_option, pcr
