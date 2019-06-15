@@ -303,19 +303,6 @@ def save_full_quotes_db(request):
                                 ltt = option['ltt']
                             ).save()
     connection.close()
-    def store_dates():
-        Expiry_Date.objects.all().delete()
-        Expiry_Date(
-            upstox_date = "19JUN",
-            expiry_date = str(date(2019, 6, 27)),
-            label_date = "27 JUNE"
-        ).save()
-        Expiry_Date(
-            upstox_date = "19JUL",
-            expiry_date = str(date(2019, 7, 25)),
-            label_date = "25 JULY"
-        ).save()
-        return list(Expiry_Date.objects.all())
     return Response({"Message": "Full Quotes Saved"})
 
 
@@ -329,6 +316,20 @@ def validate_token(request):
     except:
         return Response({"status": 0})
 
+def store_dates():
+    Expiry_Date.objects.all().delete()
+    Expiry_Date(
+        upstox_date = "19JUN",
+        expiry_date = str(date(2019, 6, 27)),
+        label_date = "27 JUNE"
+    ).save()
+    Expiry_Date(
+        upstox_date = "19JUL",
+        expiry_date = str(date(2019, 7, 25)),
+        label_date = "25 JULY"
+    ).save()
+    connection.close()
+
 
 @api_view(['POST'])
 def get_full_quotes(request):
@@ -338,6 +339,7 @@ def get_full_quotes(request):
     symbol = request_data['symbol']
     expiry_date = request_data['expiry_date']
     days_to_expiry = 0
+    store_dates()
     dates = list(Expiry_Date.objects.all())
     if expiry_date == "0":
         expiry_date = dates[0].upstox_date
