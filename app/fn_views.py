@@ -305,6 +305,9 @@ def validate_token(request):
 
 def store_dates():
     Expiry_Date.objects.all().delete()
+    cursor = connection.cursor()
+    cursor.excute("DROP TABLE APP_EXPIRY_DATE")
+    '''
     Expiry_Date(
         upstox_date = "19JUN",
         expiry_date = str(date(2019, 6, 27)),
@@ -317,6 +320,7 @@ def store_dates():
         label_date = "20 JUNE",
         future_date = "19JUN"
     ).save()
+    '''
     connection.close()
 
 @api_view(['POST'])

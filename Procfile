@@ -1,4 +1,4 @@
-release: python manage.py migrate app
+release: python manage.py migrate
 web: gunicorn upstox_server.wsgi --log-file -
 worker: python worker.py
 web: daphne upstox_server.asgi:application --port $PORT --bind 0.0.0.0 -v2
