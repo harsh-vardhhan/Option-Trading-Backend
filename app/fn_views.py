@@ -86,23 +86,11 @@ def historical_option(request):
     ltp_change()
     return Response({"historical": (fetch_option())})
 
-
-def expiry_dates_list():
-    Expiry_Date.objects.all().delete()
-    Expiry_Date(
-        upstox_date = "19JUN",
-        expiry_date = str(date(2019, 6, 27))
-    ).save()
-    Expiry_Date(
-        upstox_date = "19JUL",
-        expiry_date = str(date(2019, 7, 25))
-    ).save()
-    expiry_dates = Expiry_Date.objects.all()
-    return expiry_dates
  
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
 def save_option(request):
+    store_dates()
     def create_session():
         request_data = json.loads(json.dumps(request.data))
         upstox = Upstox(api_key, request_data['accessToken'])
