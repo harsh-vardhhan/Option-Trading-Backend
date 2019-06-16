@@ -39,4 +39,3 @@ class Expiry_Date(models.Model):
     upstox_date = models.CharField(max_length=40)
     expiry_date = models.CharField(max_length=40)
     label_date = models.CharField(max_length=40)
-    future_date = models.CharField(max_length=40)
