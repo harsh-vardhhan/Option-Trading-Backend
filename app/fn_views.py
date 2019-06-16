@@ -387,21 +387,23 @@ def get_full_quotes(request):
         put_OI = 0.0
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
-                # remove strikes which are less than ₹ 10,000 
-                if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
-                    # arrange option pair always in CE and PE order
-                    diff = abs(float(equity.name) - float(a.strike_price))
-                    call_OI = call_OI + to_lakh(a.oi)
-                    put_OI = put_OI + to_lakh(b.oi)
-                    if(diff < closest_strike):
-                        closest_strike = diff
-                        closest_option = a
-                    if (a.symbol[-2:] == 'CE'):
-                        option_pair = (a, b, a.strike_price)
-                        option_pairs.append(option_pair)
-                    else:
-                        option_pair = (b, a, a.strike_price)
-                        option_pairs.append(option_pair)
+                # filter strikes to 100 multiples
+                if(a.strike_price % 100 == 0):
+                    # remove strikes which are less than ₹ 10,000 
+                    if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
+                        # arrange option pair always in CE and PE order
+                        diff = abs(float(equity.name) - float(a.strike_price))
+                        call_OI = call_OI + to_lakh(a.oi)
+                        put_OI = put_OI + to_lakh(b.oi)
+                        if(diff < closest_strike):
+                            closest_strike = diff
+                            closest_option = a
+                        if (a.symbol[-2:] == 'CE'):
+                            option_pair = (a, b, a.strike_price)
+                            option_pairs.append(option_pair)
+                        else:
+                            option_pair = (b, a, a.strike_price)
+                            option_pairs.append(option_pair)
         if call_OI == 0.0:
             call_OI = 1.0                
         pcr = round(put_OI/call_OI, 2)
