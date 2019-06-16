@@ -30,10 +30,6 @@ master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
-expiry_dates = ['19JUN','19JUL']
-expiry_date = "19JUN"
-current_month_expiry = date(2019, 6, 27)
-next_month_expirt = date(2019, 7, 25)
 
 @api_view()
 def get_redirect_url(request):
@@ -123,7 +119,7 @@ def save_option(request):
             first_day_date = datetime(today.year, today.month, 1).timestamp() * 1000
             return first_day_date
         def get_last_date():
-            today = datetime.now().today() + relativedelta.relativedelta(months=1)
+            today = datetime.now().today() + relativedelta.relativedelta(weeks=1)
             last_day = calendar.monthrange(today.year, today.month)[1]
             last_day_date = datetime(today.year, today.month, last_day).timestamp() * 1000
             return last_day_date
@@ -250,9 +246,10 @@ def cache_full_quotes_redis(request):
             if (symbol_fetched.upper() == symbol):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
+                expiry_dates = list(Expiry_Date.objects.all())
                 for expiry_dated in expiry_dates:
-                    expiry_date_fetched = trim_symbol[:len(expiry_dated)] 
-                    if(expiry_date_fetched.upper() == expiry_dated):
+                    expiry_date_fetched = trim_symbol[:len(expiry_dated.upstox_date)]
+                    if(expiry_date_fetched.upper() == expiry_dated.upstox_date):
                         q.enqueue(full_quotes_queue, access_token, ops.symbol)
     return Response({"Message": "Quotes Saved"}) 
 
@@ -274,9 +271,10 @@ def save_full_quotes_db(request):
             if(symbol_cache.upper() == symbol):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
+                expiry_dates = list(Expiry_Date.objects.all())
                 for expiry_date in expiry_dates:
-                    symbol_date = trim_symbol[:len(expiry_date)]
-                    if (symbol_date.upper() == expiry_date):
+                    symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
+                    if (symbol_date.upper() == expiry_date.upstox_date):
                         symbol_key = r.get(ops.symbol)
                         if (symbol_key != None):
                             val = symbol_key.decode("utf-8")
@@ -302,19 +300,6 @@ def save_full_quotes_db(request):
                                 yearly_high = option['yearly_high'],
                                 ltt = option['ltt']
                             ).save()
-    def store_dates():
-        Expiry_Date.objects.all().delete()
-        Expiry_Date(
-            upstox_date = "19JUN",
-            expiry_date = str(date(2019, 6, 27)),
-            label_date = "27 JUNE"
-        ).save()
-        Expiry_Date(
-            upstox_date = "19JUL",
-            expiry_date = str(date(2019, 7, 25)),
-            label_date = "25 JULY"
-        ).save()
-    store_dates()
     connection.close()
     return Response({"Message": "Full Quotes Saved"})
 
@@ -330,10 +315,25 @@ def validate_token(request):
         return Response({"status": 0})
 
 
-
+def store_dates():
+    Expiry_Date.objects.all().delete()
+    Expiry_Date(
+        upstox_date = "19JUN",
+        expiry_date = str(date(2019, 6, 27)),
+        label_date = "27 JUNE",
+        future_date = "19JUN"
+    ).save()
+    Expiry_Date(
+        upstox_date = "196",
+        expiry_date = str(date(2019, 6, 20)),
+        label_date = "20 JUNE",
+        future_date = "19JUN"
+    ).save()
+    connection.close()
 
 @api_view(['POST'])
 def get_full_quotes(request):
+    store_dates()
     request_data = json.loads(json.dumps(request.data))
     access_token = request_data['accessToken']
     indices = request_data['indices']
@@ -377,8 +377,12 @@ def get_full_quotes(request):
     def search_future():
         upstox = create_session(request)
         upstox.get_master_contract(master_contract_FO)
+        list_options = list(Expiry_Date
+                            .objects\
+                            .all()\
+                            .filter(upstox_date=expiry_date))
         future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            master_contract_FO, symbol+expiry_date+'FUT'),
+            master_contract_FO, symbol+list_options[0].future_date+'FUT'),
             LiveFeedType.Full)
         return future
     def pairing():
