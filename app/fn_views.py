@@ -264,7 +264,7 @@ def save_full_quotes_db(request):
                     symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
                     if (symbol_date.upper() == expiry_date.upstox_date):
                         symbol_key = r.get(ops.symbol)
-                        if (symbol_key != None):
+                        if (symbol_key != None):                         
                             val = symbol_key.decode("utf-8")
                             option = ast.literal_eval(val)
                             Full_Quote(
@@ -290,6 +290,111 @@ def save_full_quotes_db(request):
                             ).save()
     connection.close()
     return Response({"Message": "Full Quotes Saved"})
+
+def init_full_quotes_cache(request, symbol_req, expiry_date_req):
+    request_data = json.loads(json.dumps(request.data))
+    # create_session method exclusively while developing in online mode
+    def create_session():
+        upstox = Upstox(api_key, request_data['accessToken'])
+        return upstox
+    searched_symbol = symbol_req + expiry_date_req
+    list_option = Full_Quote.objects\
+                            .all()\
+                            .filter(symbol__startswith = searched_symbol)\
+                            .order_by('strike_price')
+    full_quotes = []
+    for symbol in symbols:
+        for ops in list_option:
+            # This has been done to differentiate between NIFTY and BANKNIFTY
+            symbol_len = len(symbol)
+            symbol_cache = ops.symbol[:symbol_len]
+            if(symbol_cache.upper() == symbol):
+                # This is to fetch Monthly Options only
+                trim_symbol = ops.symbol[symbol_len:]
+                expiry_dates = list(Expiry_Date.objects.all())
+                for expiry_date in expiry_dates:
+                    symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
+                    if (symbol_date.upper() == expiry_date.upstox_date):
+                        full_quote_obj = Full_Quote(
+                            strike_price = ops.strike_price,
+                            exchange = ops.exchange,
+                            symbol = ops.symbol,
+                            ltp = ops.ltp,
+                            close = ops.close,
+                            open = ops.open,
+                            high = ops.high,
+                            low = ops.low,
+                            vtt = ops.vtt,
+                            atp = ops.atp,
+                            oi = ops.oi,
+                            spot_price = ops.spot_price,
+                            total_buy_qty = ops.total_buy_qty,
+                            total_sell_qty = ops.total_sell_qty,
+                            lower_circuit = ops.lower_circuit,
+                            upper_circuit = ops.upper_circuit,
+                            yearly_low = ops.yearly_low,
+                            yearly_high = ops.yearly_high,
+                            ltt = ops.ltt
+                        )
+                        full_quotes.append(full_quote_obj) 
+    connection.close()
+    return full_quotes  
+
+def get_full_quotes_cache(request, symbol_req, expiry_date_req):
+    request_data = json.loads(json.dumps(request.data))
+    # create_session method exclusively while developing in online mode
+    def create_session():
+        upstox = Upstox(api_key, request_data['accessToken'])
+        return upstox
+    searched_symbol = symbol_req + expiry_date_req
+    list_option = Instrument.objects\
+                            .all()\
+                            .filter(symbol__startswith = searched_symbol.lower())\
+                            .order_by('strike_price')
+    full_quotes = []
+    for symbol in symbols:
+        for ops in list_option:
+            # This has been done to differentiate between NIFTY and BANKNIFTY
+            symbol_len = len(symbol)
+            symbol_cache = ops.symbol[:symbol_len]
+            if(symbol_cache.upper() == symbol):
+                # This is to fetch Monthly Options only
+                trim_symbol = ops.symbol[symbol_len:]
+                expiry_dates = list(Expiry_Date.objects.all())
+                for expiry_date in expiry_dates:
+                    symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
+                    if (symbol_date.upper() == expiry_date.upstox_date):
+                        lowercase_symbol = ops.symbol
+                        symbol_key = r.get(lowercase_symbol.upper())
+                        if (symbol_key != None):
+                            symbol_decoded = symbol_key.decode("utf-8")
+                            val = symbol_key.decode("utf-8")
+                            option = ast.literal_eval(val)
+                            full_quote_obj = Full_Quote(
+                                strike_price = ops.strike_price,
+                                exchange = option['exchange'],
+                                symbol = option['symbol'],
+                                ltp = option['ltp'],
+                                close = option['close'],
+                                open = option['open'],
+                                high = option['high'],
+                                low = option['low'],
+                                vtt = option['vtt'],
+                                atp = option['atp'],
+                                oi = option['oi'],
+                                spot_price = option['spot_price'],
+                                total_buy_qty = option['total_buy_qty'],
+                                total_sell_qty = option['total_sell_qty'],
+                                lower_circuit = option['lower_circuit'],
+                                upper_circuit = option['upper_circuit'],
+                                yearly_low = option['yearly_low'],
+                                yearly_high = option['yearly_high'],
+                                ltt = option['ltt']
+                            )
+                            full_quotes.append(full_quote_obj) 
+    connection.close()
+    return full_quotes
+
 
 
 @api_view(['POST'])
@@ -374,9 +479,10 @@ def get_full_quotes(request):
             LiveFeedType.Full)
         return future
     def pairing():
-        list_options = Full_Quote.objects.all()\
-                                         .filter(symbol__startswith=symbol+expiry_date)\
-                                         .order_by('strike_price')
+        list_options = get_full_quotes_cache(request, symbol, expiry_date)
+        if len(list_options)== 0:
+            list_options = init_full_quotes_cache(request, symbol, expiry_date)
+        print("list_options_size", len(list_options))
         def to_lakh(n):
             return float(round(n/100000, 1))
         option_pairs = []
