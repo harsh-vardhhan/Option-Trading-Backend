@@ -64,6 +64,7 @@ class stock_consumer(AsyncWebsocketConsumer):
          stock_consumer.send_message(self, message)
          messageData = json.loads(json.dumps(message))
          symbol = (messageData['symbol'])
+         print(symbol)
          r.set(symbol, messageData)
       u.set_on_quote_update(quote_update)
 

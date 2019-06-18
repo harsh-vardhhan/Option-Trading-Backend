@@ -434,6 +434,7 @@ def get_full_quotes(request):
     expiry_date = request_data['expiry_date']
     days_to_expiry = 0
     dates = list(Expiry_Date.objects.all())
+    connection.close()
     if expiry_date == "0":
         expiry_date = dates[0].upstox_date
         d1 = date.today()
@@ -446,6 +447,7 @@ def get_full_quotes(request):
                                     .objects\
                                     .all()\
                                     .filter(upstox_date=expiry_date))
+        connection.close()
         d1 = date.today()
         expiry_date_string = expiry_date_list[0].expiry_date
         d2 = datetime.strptime(expiry_date_string, '%Y-%m-%d').date()
@@ -474,6 +476,7 @@ def get_full_quotes(request):
                             .objects\
                             .all()\
                             .filter(upstox_date=expiry_date))
+        connection.close()
         future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             master_contract_FO, symbol+list_options[0].future_date+'FUT'),
             LiveFeedType.Full)
@@ -485,6 +488,8 @@ def get_full_quotes(request):
         list_options = redis_list_options
         if len(redis_list_options) == len(db_list_options):
             list_options = redis_list_options
+        else:
+            list_options = db_list_options
         def to_lakh(n):
             return float(round(n/100000, 1))
         option_pairs = []
