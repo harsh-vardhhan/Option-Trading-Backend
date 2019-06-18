@@ -413,13 +413,13 @@ def store_dates():
     Expiry_Date(
         upstox_date = "19JUN",
         expiry_date = str(date(2019, 6, 27)),
-        label_date = "27 JUNE",
+        label_date = "27 JUNE (Monthly)",
         future_date = "19JUN"
     ).save()
     Expiry_Date(
         upstox_date = "196",
         expiry_date = str(date(2019, 6, 20)),
-        label_date = "20 JUNE",
+        label_date = "20 JUNE (Weekly)",
         future_date = "19JUN"
     ).save()
     connection.close()
