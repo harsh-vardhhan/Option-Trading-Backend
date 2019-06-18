@@ -486,7 +486,7 @@ def get_full_quotes(request):
         db_list_options = init_full_quotes_cache(request, symbol, expiry_date)
         redis_list_options = get_full_quotes_cache(request, symbol, expiry_date)
         list_options = redis_list_options
-        if len(redis_list_options) == len(db_list_options):
+        if len(redis_list_options) > 0:
             list_options = redis_list_options
         else:
             list_options = db_list_options
