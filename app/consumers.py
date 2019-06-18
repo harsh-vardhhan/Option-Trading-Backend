@@ -34,8 +34,7 @@ class stock_consumer(AsyncWebsocketConsumer):
       u = Upstox(api_key, access_token)    
       u.get_master_contract('NSE_FO')
       list_options = Full_Quote.objects.all()\
-                                       .order_by('strike_price')\
-                                       .filter(symbol__startswith="NIFTY19JUN")
+                                       .order_by('strike_price')
       def to_lakh(n):
          return float(round(n/100000, 1))
       for a, b in it.combinations(list_options, 2):
