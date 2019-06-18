@@ -490,6 +490,7 @@ def get_full_quotes(request):
             list_options = redis_list_options
         else:
             list_options = db_list_options
+        print(len(db_list_options), len(redis_list_options))
         def to_lakh(n):
             return float(round(n/100000, 1))
         option_pairs = []
