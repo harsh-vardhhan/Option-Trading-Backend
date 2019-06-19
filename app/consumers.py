@@ -61,9 +61,6 @@ class stock_consumer(AsyncWebsocketConsumer):
                                a.exchange, a.symbol, b.symbol)
       connection.close()   
       u.start_websocket(True)
-      condition = threading.Condition()
-      condition.acquire()
-      condition.wait()
       def quote_update(message):
          stock_consumer.send_message(self, message)
          messageData = json.loads(json.dumps(message))
