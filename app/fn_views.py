@@ -507,10 +507,7 @@ def get_full_quotes(request):
             LiveFeedType.Full)
         return future
     def pairing():
-        db_list_options = init_full_quotes_cache(request, symbol, expiry_date)
-        redis_list_options = get_full_quotes_cache(request, symbol, expiry_date)
-        list_options = redis_list_options
-        print("***************LENGTH",len(db_list_options), len(redis_list_options))
+        list_options = get_full_quotes_cache(request, symbol, expiry_date)
         def to_lakh(n):
             return float(round(n/100000, 1))
         option_pairs = []
