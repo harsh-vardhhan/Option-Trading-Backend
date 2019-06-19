@@ -349,9 +349,9 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
         upstox = Upstox(api_key, request_data['accessToken'])
         return upstox
     searched_symbol = symbol_req + expiry_date_req
-    list_option = Instrument.objects\
+    list_option = Full_Quote.objects\
                             .all()\
-                            .filter(symbol__startswith = searched_symbol.lower())\
+                            .filter(symbol__startswith = searched_symbol)\
                             .order_by('strike_price')
     full_quotes = []
     for symbol in symbols:
@@ -393,7 +393,30 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                                 yearly_high = option['yearly_high'],
                                 ltt = option['ltt']
                             )
-                            full_quotes.append(full_quote_obj) 
+                            full_quotes.append(full_quote_obj)
+                        else:
+                            full_quote_obj = Full_Quote(
+                                strike_price = ops.strike_price,
+                                exchange =  ops.exchange,
+                                symbol =  ops.symbol,
+                                ltp =  ops.ltp,
+                                close =  ops.close,
+                                open =  ops.open,
+                                high =  ops.high,
+                                low =  ops.low,
+                                vtt =  ops.vtt,
+                                atp =  ops.atp,
+                                oi =  ops.oi,
+                                spot_price =  ops.spot_price,
+                                total_buy_qty =  ops.total_buy_qty,
+                                total_sell_qty =  ops.total_sell_qty,
+                                lower_circuit =  ops.lower_circuit,
+                                upper_circuit =  ops.upper_circuit,
+                                yearly_low =  ops.yearly_low,
+                                yearly_high = ops.yearly_high,
+                                ltt =  ops.ltt,
+                            )
+                            full_quotes.append(full_quote_obj)
     connection.close()
     return full_quotes
 
@@ -484,14 +507,9 @@ def get_full_quotes(request):
             LiveFeedType.Full)
         return future
     def pairing():
-        print(symbol, expiry_date)
         db_list_options = init_full_quotes_cache(request, symbol, expiry_date)
         redis_list_options = get_full_quotes_cache(request, symbol, expiry_date)
         list_options = redis_list_options
-        if len(redis_list_options) > 10:
-            list_options = redis_list_options
-        else:
-            list_options = db_list_options
         print("***************LENGTH",len(db_list_options), len(redis_list_options))
         def to_lakh(n):
             return float(round(n/100000, 1))
