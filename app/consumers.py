@@ -15,6 +15,7 @@ import redis
 import os
 from django.db import connection
 import pdb
+import threading
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
