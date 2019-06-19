@@ -41,6 +41,7 @@ def get_redirect_url(request):
 
 @api_view(['POST'])
 def get_access_token(request):
+    r.flushall()
     request_data = json.loads(json.dumps(request.data))
     session = Session(api_key)
     session.set_redirect_uri(redirect_uri)
