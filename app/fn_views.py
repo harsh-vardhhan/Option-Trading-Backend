@@ -293,55 +293,9 @@ def save_full_quotes_db(request):
     connection.close()
     return Response({"Message": "Full Quotes Saved"})
 
-def init_full_quotes_cache(request, symbol_req, expiry_date_req):
-    request_data = json.loads(json.dumps(request.data))
-    # create_session method exclusively while developing in online mode
-    def create_session():
-        upstox = Upstox(api_key, request_data['accessToken'])
-        return upstox
-    searched_symbol = symbol_req + expiry_date_req
-    list_option = Full_Quote.objects\
-                            .all()\
-                            .filter(symbol__startswith = searched_symbol)\
-                            .order_by('strike_price')
-    full_quotes = []
-    for symbol in symbols:
-        for ops in list_option:
-            # This has been done to differentiate between NIFTY and BANKNIFTY
-            symbol_len = len(symbol)
-            symbol_cache = ops.symbol[:symbol_len]
-            if(symbol_cache.upper() == symbol):
-                # This is to fetch Monthly Options only
-                trim_symbol = ops.symbol[symbol_len:]
-                expiry_dates = list(Expiry_Date.objects.all())
-                for expiry_date in expiry_dates:
-                    symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
-                    if (symbol_date.upper() == expiry_date.upstox_date):
-                        full_quote_obj = Full_Quote(
-                            strike_price = ops.strike_price,
-                            exchange = ops.exchange,
-                            symbol = ops.symbol,
-                            ltp = ops.ltp,
-                            close = ops.close,
-                            open = ops.open,
-                            high = ops.high,
-                            low = ops.low,
-                            vtt = ops.vtt,
-                            atp = ops.atp,
-                            oi = ops.oi,
-                            spot_price = ops.spot_price,
-                            total_buy_qty = ops.total_buy_qty,
-                            total_sell_qty = ops.total_sell_qty,
-                            lower_circuit = ops.lower_circuit,
-                            upper_circuit = ops.upper_circuit,
-                            yearly_low = ops.yearly_low,
-                            yearly_high = ops.yearly_high,
-                            ltt = ops.ltt
-                        )
-                        full_quotes.append(full_quote_obj) 
-    connection.close()
-    return full_quotes  
-
+# First Fetches a value from redis
+# if not available put's an 
+# alternative value from database
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
     request_data = json.loads(json.dumps(request.data))
     # create_session method exclusively while developing in online mode
