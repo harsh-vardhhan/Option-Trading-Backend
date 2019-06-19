@@ -242,6 +242,8 @@ def cache_full_quotes_redis(request):
     return Response({"Message": "Quotes Saved"}) 
 
 # Step 2: From redis move all the Quotes to database
+# NOTE: This Function should now run only after hours
+# to prefilling of redis before websocket starts.
 @api_view(['POST'])
 def save_full_quotes_db(request):
     request_data = json.loads(json.dumps(request.data))
@@ -486,7 +488,7 @@ def get_full_quotes(request):
         db_list_options = init_full_quotes_cache(request, symbol, expiry_date)
         redis_list_options = get_full_quotes_cache(request, symbol, expiry_date)
         list_options = redis_list_options
-        if len(redis_list_options) > 0:
+        if len(redis_list_options) > 10:
             list_options = redis_list_options
         else:
             list_options = db_list_options
