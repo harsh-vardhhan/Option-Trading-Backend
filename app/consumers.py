@@ -67,6 +67,9 @@ class stock_consumer(AsyncWebsocketConsumer):
          symbol = (messageData['symbol'])
          print(symbol)
          r.set(symbol, messageData)
+      def websocket_stopped():
+         print("*********STOPPED**********")
+      u.set_on_disconnect (websocket_stopped)
       u.set_on_quote_update(quote_update)
 
          
