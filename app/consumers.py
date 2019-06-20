@@ -48,6 +48,7 @@ class stock_consumer(AsyncWebsocketConsumer):
                   else:
                      return r.get(subscribed_key).decode("utf-8")
                subscribed_access_token = get_key()
+               '''
                if(r.exists(subscribed_key) == False):      
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, 
@@ -59,17 +60,15 @@ class stock_consumer(AsyncWebsocketConsumer):
                      q.enqueue(instrument_subscribe_queue, 
                                access_token, 
                                a.exchange, a.symbol, b.symbol)
+               '''
       connection.close()   
       u.start_websocket(True)
       def quote_update(message):
          stock_consumer.send_message(self, message)
          messageData = json.loads(json.dumps(message))
          symbol = (messageData['symbol'])
-         print(symbol)
          r.set(symbol, messageData)
       def websocket_stopped(message):
-         print("*********STOPPED**********")
-         print(json.loads(json.loads(message)))
          u.start_websocket(True)
       u.set_on_disconnect (websocket_stopped)
       u.set_on_quote_update(quote_update)

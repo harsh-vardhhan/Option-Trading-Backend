@@ -18,6 +18,8 @@ import ast
 import os
 import redis
 from math import sqrt
+from app.background_process import cal_iv_queue
+
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
@@ -30,6 +32,7 @@ master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
+
 
 @api_view()
 def get_redirect_url(request):
@@ -296,6 +299,8 @@ def save_full_quotes_db(request):
 # First Fetches a value from redis
 # if not available put's an 
 # alternative value from database
+# TODO Schedule this function
+# TODO Perform IV Calculations here
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
     request_data = json.loads(json.dumps(request.data))
     # create_session method exclusively while developing in online mode
@@ -405,6 +410,10 @@ def store_dates():
 
 @api_view(['POST'])
 def get_full_quotes(request):
+    def obj_dict(obj):
+        return obj.__dict__
+    def toJson(func):
+        return json.loads(json.dumps(func, default=obj_dict))
     store_dates()
     request_data = json.loads(json.dumps(request.data))
     access_token = request_data['accessToken']
@@ -459,8 +468,31 @@ def get_full_quotes(request):
         future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             master_contract_FO, symbol+list_options[0].future_date+'FUT'),
             LiveFeedType.Full)
-        return future
+        future_data =  json.loads(json.dumps(future))
+        future_stock = Full_Quote(
+            strike_price = 0,
+            exchange = future_data['exchange'],
+            symbol = future_data['symbol'],
+            ltp = future_data['ltp'],
+            close = future_data['close'],
+            open = future_data['open'],
+            high = future_data['high'],
+            low = future_data['low'],
+            vtt = future_data['vtt'],
+            atp = future_data['atp'],
+            oi = future_data['oi'],
+            spot_price = future_data['spot_price'],
+            total_buy_qty = future_data['total_buy_qty'],
+            total_sell_qty = future_data['total_sell_qty'],
+            lower_circuit = future_data['lower_circuit'],
+            upper_circuit = future_data['upper_circuit'],
+            yearly_low = future_data['yearly_low'],
+            yearly_high = future_data['yearly_high'],
+            ltt = future_data['ltt']
+        )
+        return future_stock
     def pairing():
+        q = Queue(connection=conn)
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
         def to_lakh(n):
             return float(round(n/100000, 1))
@@ -470,6 +502,8 @@ def get_full_quotes(request):
         equity = search_equity()
         call_OI = 0.0
         put_OI = 0.0
+        iv = 0.0
+        future = search_future()
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
                 # filter strikes to 100 multiples
@@ -479,15 +513,78 @@ def get_full_quotes(request):
                         # arrange option pair always in CE and PE order
                         diff = abs(float(equity.name) - float(a.strike_price))
                         call_OI = call_OI + to_lakh(a.oi)
-                        put_OI = put_OI + to_lakh(b.oi)
+                        put_OI = put_OI + to_lakh(b.oi)       
+ 
                         if(diff < closest_strike):
                             closest_strike = diff
                             closest_option = a
                         if (a.symbol[-2:] == 'CE'):
-                            option_pair = (a, b, a.strike_price)
+                            if ( a.strike_price > equity.name):
+                                q.enqueue(
+                                    cal_iv_queue, 
+                                    a.symbol, 
+                                    future.ltp, 
+                                    a.strike_price, 
+                                    days_to_expiry/365,
+                                    float(a.ltp), 
+                                    0.1, 
+                                    type="call"
+                                )
+                                new_iv = r.get(a.symbol+"_iv") 
+                                if (new_iv != None):
+                                    val = new_iv.decode("utf-8")
+                                    iv = ast.literal_eval(val)
+                            else:
+                                q.enqueue(
+                                    cal_iv_queue, 
+                                    b.symbol, 
+                                    future.ltp, 
+                                    b.strike_price, 
+                                    days_to_expiry/365,
+                                    float(b.ltp), 
+                                    0.1, 
+                                    type="put"
+                                )
+                                new_iv = r.get(b.symbol+"_iv") 
+                                if (new_iv != None):
+                                    val = new_iv.decode("utf-8")
+                                    iv = ast.literal_eval(val)
+
+                            option_pair = (a, b, a.strike_price, iv)
                             option_pairs.append(option_pair)
                         else:
-                            option_pair = (b, a, a.strike_price)
+                            if (b.strike_price > equity.name):
+                                q.enqueue(
+                                    cal_iv_queue, 
+                                    b.symbol, 
+                                    future.ltp, 
+                                    b.strike_price, 
+                                    days_to_expiry/365,
+                                    float(b.ltp), 
+                                    0.1, 
+                                    type="call"
+                                )
+                                new_iv = r.get(b.symbol+"_iv") 
+                                if (new_iv != None):
+                                    val = new_iv.decode("utf-8")
+                                    iv = ast.literal_eval(val)
+                            else:
+                                q.enqueue(
+                                    cal_iv_queue, 
+                                    a.symbol, 
+                                    future.ltp, 
+                                    a.strike_price, 
+                                    days_to_expiry/365,
+                                    float(a.ltp), 
+                                    0.1, 
+                                    type="put"
+                                )
+                                new_iv = r.get(a.symbol+"_iv") 
+                                if (new_iv != None):
+                                    val = new_iv.decode("utf-8")
+                                    iv = ast.literal_eval(val)
+
+                            option_pair = (b, a, a.strike_price, iv)
                             option_pairs.append(option_pair)
         if call_OI == 0.0:
             call_OI = 1.0                
@@ -500,10 +597,6 @@ def get_full_quotes(request):
             return 75
         elif ("BANKNIFTY"):
             return 20
-    def obj_dict(obj):
-        return obj.__dict__
-    def toJson(func):
-        return json.loads(json.dumps(func, default=obj_dict))
     return Response({
         "stock": toJson(search_equity()),
         "options": toJson(option_pairs),
