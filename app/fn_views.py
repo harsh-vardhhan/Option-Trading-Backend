@@ -20,7 +20,6 @@ import redis
 from math import sqrt
 from app.background_process import cal_iv_queue
 
-
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 
@@ -45,13 +44,27 @@ def get_redirect_url(request):
 @api_view(['POST'])
 def get_access_token(request):
     request_data = json.loads(json.dumps(request.data))
-    print("LOGIN*****************",request_data)
     session = Session(api_key)
     session.set_redirect_uri(redirect_uri)
     session.set_api_secret(secret_key)
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
+    u = Upstox (api_key, access_token)
+    print(u.get_profile())
     return Response({"accessToken": access_token})
+
+@api_view(['POST'])
+def get_access_token_admin(request):
+    request_data = json.loads(json.dumps(request.data))
+    session = Session(api_key)
+    session.set_redirect_uri(redirect_uri)
+    session.set_api_secret(secret_key)
+    session.set_code(request_data['requestcode'])
+    access_token = session.retrieve_access_token()
+    r.set("access_token", access_token)
+    return Response({"accessToken": access_token})
+
+
 
 @api_view(['POST'])
 def historical_option(request):
