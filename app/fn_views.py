@@ -44,8 +44,8 @@ def get_redirect_url(request):
 
 @api_view(['POST'])
 def get_access_token(request):
-    r.flushall()
     request_data = json.loads(json.dumps(request.data))
+    print(request_data)
     session = Session(api_key)
     session.set_redirect_uri(redirect_uri)
     session.set_api_secret(secret_key)
@@ -218,9 +218,9 @@ def save_option(request):
 # passed through this should be filtred. 
 @api_view(['POST'])
 def cache_full_quotes_redis(request):
+    store_dates()
     request_data = json.loads(json.dumps(request.data))
     access_token = request_data['accessToken']
-    r.flushall()
     list_options = Instrument.objects.all()
     q = Queue(connection=conn)
     def create_session(accessToken):
@@ -398,12 +398,6 @@ def store_dates():
         upstox_date = "19JUN",
         expiry_date = str(date(2019, 6, 27)),
         label_date = "27 JUNE (Monthly)",
-        future_date = "19JUN"
-    ).save()
-    Expiry_Date(
-        upstox_date = "196",
-        expiry_date = str(date(2019, 6, 20)),
-        label_date = "20 JUNE (Weekly)",
         future_date = "19JUN"
     ).save()
     connection.close()
