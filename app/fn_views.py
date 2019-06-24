@@ -8,6 +8,7 @@ from datetime import datetime, date, timedelta
 import calendar
 from dateutil import relativedelta
 from time import sleep
+import redis
 from rq import Queue
 from rq_scheduler import Scheduler
 from worker import conn
@@ -17,7 +18,6 @@ from django.db import connection
 import requests
 import ast
 import os
-import redis
 from math import sqrt
 from app.background_process import cal_iv_queue, printqueue
 
@@ -33,9 +33,14 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
+#q = Queue(connection=r)
 scheduler = Scheduler(connection=r)
-scheduler.enqueue_in(timedelta(seconds=10), printqueue, "hey")
-
+scheduler.schedule(
+    scheduled_time=datetime.utcnow(), 
+    func=printqueue,                     # Function to be queued
+    interval=10,                   # Time before the function is called again, in seconds
+    repeat=None                   # Repeat this number of times (None means repeat forever)
+)
 
 @api_view()
 def get_redirect_url(request):
