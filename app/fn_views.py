@@ -34,7 +34,7 @@ niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
 scheduler = Scheduler(connection=r)
-scheduler.enqueue_in(timedelta(seconds=10), printqueue)
+scheduler.enqueue_in(timedelta(seconds=10), printqueue, "hey")
 
 
 @api_view()
