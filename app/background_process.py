@@ -23,6 +23,7 @@ def full_quotes_queue(accessToken, symbol):
     optionData = json.loads(json.dumps(option))
     redis_obj.set(symbol, optionData)
 
+
 def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
     u = Upstox(api_key, access_token)
     u.get_master_contract(master_contract_FO)

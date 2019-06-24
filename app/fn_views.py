@@ -9,6 +9,7 @@ import calendar
 from dateutil import relativedelta
 from time import sleep
 from rq import Queue
+import rq_scheduler
 from worker import conn
 from app.background_process import full_quotes_queue
 from statistics import stdev
@@ -59,6 +60,8 @@ def get_access_token_admin(request):
     session = Session(api_key)
     session.set_redirect_uri(redirect_uri)
     session.set_api_secret(secret_key)
+
+    
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
     r.set("access_token", access_token)
