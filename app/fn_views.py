@@ -37,9 +37,9 @@ symbols = ['NIFTY','BANKNIFTY']
 scheduler = Scheduler(connection=r)
 scheduler.schedule(
     scheduled_time=datetime.utcnow(), 
-    func=printqueue,                     # Function to be queued
-    interval=10,                   # Time before the function is called again, in seconds
-    repeat=None                   # Repeat this number of times (None means repeat forever)
+    func=printqueue,
+    interval=10,
+    repeat=None
 )
 
 @api_view()
