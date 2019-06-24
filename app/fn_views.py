@@ -33,7 +33,7 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
-scheduler.enqueue_in(timedelta(minutes=10), printqueue)
+scheduler.enqueue_in(timedelta(seconds=10), printqueue)
 
 
 @api_view()
