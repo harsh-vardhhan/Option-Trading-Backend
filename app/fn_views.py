@@ -8,6 +8,7 @@ from datetime import datetime, date, timedelta
 import calendar
 from dateutil import relativedelta
 from time import sleep
+from redis import Redis
 from rq import Queue
 import rq_scheduler
 from worker import conn
@@ -33,6 +34,7 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
+scheduler = Scheduler(connection=r)
 scheduler.enqueue_in(timedelta(seconds=10), printqueue)
 
 
