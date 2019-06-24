@@ -24,6 +24,10 @@ def full_quotes_queue(accessToken, symbol):
     redis_obj.set(symbol, optionData)
 
 
+def printqueue():
+    print("Hey")
+
+
 def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
     u = Upstox(api_key, access_token)
     u.get_master_contract(master_contract_FO)

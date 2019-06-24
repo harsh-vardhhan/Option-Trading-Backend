@@ -4,7 +4,7 @@ from upstox_api.api import Session, Upstox, LiveFeedType, OHLCInterval
 import json
 import itertools as it
 from app.models import Instrument, Full_Quote, Expiry_Date
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 import calendar
 from dateutil import relativedelta
 from time import sleep
@@ -19,7 +19,7 @@ import ast
 import os
 import redis
 from math import sqrt
-from app.background_process import cal_iv_queue
+from app.background_process import cal_iv_queue, printqueue
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
@@ -32,6 +32,8 @@ master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
+
+scheduler.enqueue_in(timedelta(minutes=10), printqueue)
 
 
 @api_view()
