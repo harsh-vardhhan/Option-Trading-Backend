@@ -8,7 +8,6 @@ from datetime import datetime, date, timedelta
 import calendar
 from dateutil import relativedelta
 from time import sleep
-from redis import Redis
 from rq import Queue
 import rq_scheduler
 from worker import conn
