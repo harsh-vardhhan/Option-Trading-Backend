@@ -9,7 +9,7 @@ import calendar
 from dateutil import relativedelta
 from time import sleep
 from rq import Queue
-import rq_scheduler
+from rq_scheduler import Scheduler
 from worker import conn
 from app.background_process import full_quotes_queue
 from statistics import stdev
