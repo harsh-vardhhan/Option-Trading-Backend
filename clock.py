@@ -28,6 +28,8 @@ def create_session():
 def timed_job():
         #values to be iterated
         symbol = "NIFTY"
+        nse_index = 'NSE_INDEX'
+        indices= "NIFTY_50"
         future_date = "19JUL"
         expiry_date = date(2019, 7, 25)
 
@@ -43,10 +45,22 @@ def timed_job():
         future_data =  json.loads(json.dumps(future))
         future_price = future_data["ltp"]
 
+        upstox.get_master_contract(nse_index)
+        equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+            nse_index, indices),
+            LiveFeedType.Full)
+        equity_data = json.loads(json.dumps(equity))
+        equity_price = equity_data["ltp"]
+
         for key in r.scan_iter(symbol.lower()+"*"):
                 instrument = ast.literal_eval((r.get(key)).decode("utf-8"))
                 symbol = (key).decode("utf-8")
-                strike_price = (r.get("s_"+symbol)).decode("utf-8")
+                strike_price = float((r.get("s_"+symbol)).decode("utf-8"))
+                
+                if (symbol[-2:] =="ce" and strike_price > equity_price):
+                        print(symbol, "OTM")
+                elif(symbol[-2:] =="pe" and strike_price < equity_price):
+                        print(symbol, "OTM")
 
 timed_job()
 
