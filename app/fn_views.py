@@ -60,7 +60,7 @@ def get_access_token(request):
     u = Upstox (api_key, access_token)
     user_profile = u.get_profile()
     if (user_profile.get('client_id') == client_id):
-        print("*********Harsh Here************")
+        r.set("access_token", access_token)
     return Response({"accessToken": access_token})
 
 @api_view(['POST'])
@@ -197,7 +197,7 @@ def save_option(request):
                                         instrument_type = instrument_type_val, 
                                         isin = isin_val
                                     ).save()
-                                    r.set(symbol_val+"_strike_price", float(strike_price_val))
+                                    r.set("s_"+symbol_val, float(strike_price_val))
                                     #r.set(instrument.symbol, instrument)
                                     all_options.append(Instrument(
                                         ops[0], ops[1], ops[2], ops[3], ops[4],
@@ -422,10 +422,10 @@ def validate_token(request):
 def store_dates():
     Expiry_Date.objects.all().delete()
     Expiry_Date(
-        upstox_date = "19JUN",
+        upstox_date = "19JUL",
         expiry_date = str(date(2019, 6, 27)),
-        label_date = "27 JUNE (Monthly)",
-        future_date = "19JUN"
+        label_date = "25 JULY (Monthly)",
+        future_date = "19JUL"
     ).save()
     connection.close()
 
