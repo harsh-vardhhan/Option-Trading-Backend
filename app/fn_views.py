@@ -19,7 +19,13 @@ import requests
 import ast
 import os
 from math import sqrt
-from app.background_process import cal_iv_queue, printqueue
+from app.background_process import cal_iv_queue
+
+''' 
+_strike_price : Instrument Options -> To fetch option strikes
+_ : Full Quotes Options
+_c : Calcuates Options
+'''
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
@@ -33,14 +39,6 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
-#q = Queue(connection=r)
-scheduler = Scheduler(connection=r)
-scheduler.schedule(
-    scheduled_time=datetime.utcnow(), 
-    func=printqueue,
-    interval=10,
-    repeat=None
-)
 
 @api_view()
 def get_redirect_url(request):
@@ -59,7 +57,8 @@ def get_access_token(request):
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
-    print(u.get_profile())
+    user_profile = json.loads(json.loads(u.get_profile()))
+    print(user_profile["client_id"])
     return Response({"accessToken": access_token})
 
 @api_view(['POST'])
@@ -196,6 +195,8 @@ def save_option(request):
                                         instrument_type = instrument_type_val, 
                                         isin = isin_val
                                     ).save()
+                                    r.set(symbol_val+"_strike_price", float(strike_price_val))
+                                    #r.set(instrument.symbol, instrument)
                                     all_options.append(Instrument(
                                         ops[0], ops[1], ops[2], ops[3], ops[4],
                                         ops[5], ops[6], ops[7], ops[8], ops[9],
@@ -231,7 +232,7 @@ def save_option(request):
                                                 tick_size_val,
                                                 lot_size_val,
                                                 instrument_type_val,
-                                                isin_val)               
+                                                isin_val)
         return all_options
     list_options()
     return Response({"Message": "Options Saved"})

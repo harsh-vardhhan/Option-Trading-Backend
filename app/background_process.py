@@ -20,12 +20,8 @@ def full_quotes_queue(accessToken, symbol):
     option = upstox.get_live_feed(upstox.get_instrument_by_symbol(
         master_contract_FO, symbol),
         LiveFeedType.Full)
-    optionData = json.loads(json.dumps(option))
+    optionData = json.dumps(option).encode('utf-8')
     redis_obj.set(symbol, optionData)
-
-
-def printqueue():
-    print("Hey")
 
 
 def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
