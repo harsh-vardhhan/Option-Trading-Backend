@@ -540,6 +540,7 @@ def get_full_quotes(request):
                             closest_strike = diff
                             closest_option = a
                         if (a.symbol[-2:] == 'CE'):
+                            '''
                             if ( a.strike_price > equity.name):
                                 q.enqueue(
                                     cal_iv_queue, 
@@ -570,10 +571,12 @@ def get_full_quotes(request):
                                 if (new_iv != None):
                                     val = new_iv.decode("utf-8")
                                     iv = ast.literal_eval(val)
+                            '''        
 
                             option_pair = (a, b, a.strike_price, iv)
                             option_pairs.append(option_pair)
                         else:
+                            '''
                             if (b.strike_price > equity.name):
                                 q.enqueue(
                                     cal_iv_queue, 
@@ -604,6 +607,7 @@ def get_full_quotes(request):
                                 if (new_iv != None):
                                     val = new_iv.decode("utf-8")
                                     iv = ast.literal_eval(val)
+                            '''
 
                             option_pair = (b, a, a.strike_price, iv)
                             option_pairs.append(option_pair)
