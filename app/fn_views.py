@@ -33,6 +33,7 @@ r = redis.from_url(redis_url)
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
 secret_key = 'pqmnwsq8ja'
+client_id = 245842
 master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
@@ -58,7 +59,8 @@ def get_access_token(request):
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
     user_profile = u.get_profile()
-    print(user_profile.get('client_id'))
+    if (user_profile.get('client_id') == client_id):
+        print("*********Harsh Here************")
     return Response({"accessToken": access_token})
 
 @api_view(['POST'])
