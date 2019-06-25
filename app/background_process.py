@@ -37,7 +37,7 @@ def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
 
 
 def calcImpliedVol(S, K, T, P, r, sigma, type):
-    # S: spot price
+    # S: future spot price
     # K: strike price
     # T: time to maturity
     # C: Call value
