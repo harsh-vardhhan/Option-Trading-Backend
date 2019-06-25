@@ -86,3 +86,4 @@ class stock_consumer(AsyncWebsocketConsumer):
          "type": "websocket_receive",
          "text": (message)    
       })
+

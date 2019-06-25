@@ -19,7 +19,6 @@ import requests
 import ast
 import os
 from math import sqrt
-from app.background_process import cal_iv_queue
 
 ''' 
 _strike_price : Instrument Options -> To fetch option strikes
@@ -527,90 +526,30 @@ def get_full_quotes(request):
         future = search_future()
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
-                # filter strikes to 100 multiples
-                if(a.strike_price % 100 == 0):
-                    # remove strikes which are less than ₹ 10,000 
-                    if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
-                        # arrange option pair always in CE and PE order
-                        diff = abs(float(equity.name) - float(a.strike_price))
-                        call_OI = call_OI + to_lakh(a.oi)
-                        put_OI = put_OI + to_lakh(b.oi)       
- 
-                        if(diff < closest_strike):
-                            closest_strike = diff
-                            closest_option = a
-                        if (a.symbol[-2:] == 'CE'):
-                            '''
-                            if ( a.strike_price > equity.name):
-                                q.enqueue(
-                                    cal_iv_queue, 
-                                    a.symbol, 
-                                    future.ltp, 
-                                    a.strike_price, 
-                                    days_to_expiry/365,
-                                    float(a.ltp), 
-                                    0.1, 
-                                    type="call"
-                                )
-                                new_iv = r.get(a.symbol+"_iv") 
-                                if (new_iv != None):
-                                    val = new_iv.decode("utf-8")
-                                    iv = ast.literal_eval(val)
-                            else:
-                                q.enqueue(
-                                    cal_iv_queue, 
-                                    b.symbol, 
-                                    future.ltp, 
-                                    b.strike_price, 
-                                    days_to_expiry/365,
-                                    float(b.ltp), 
-                                    0.1, 
-                                    type="put"
-                                )
-                                new_iv = r.get(b.symbol+"_iv") 
-                                if (new_iv != None):
-                                    val = new_iv.decode("utf-8")
-                                    iv = ast.literal_eval(val)
-                            '''        
+                # remove strikes which are less than ₹ 10,000 
+                if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
+                    # arrange option pair always in CE and PE order
+                    diff = abs(float(equity.name) - float(a.strike_price))
+                    call_OI = call_OI + to_lakh(a.oi)
+                    put_OI = put_OI + to_lakh(b.oi)
+                    
+                    newIV = r.get("iv_"+a.symbol.lower())
+                    if newIV != None:
+                        iv = (newIV).decode("utf-8")
 
-                            option_pair = (a, b, a.strike_price, iv)
-                            option_pairs.append(option_pair)
-                        else:
-                            '''
-                            if (b.strike_price > equity.name):
-                                q.enqueue(
-                                    cal_iv_queue, 
-                                    b.symbol, 
-                                    future.ltp, 
-                                    b.strike_price, 
-                                    days_to_expiry/365,
-                                    float(b.ltp), 
-                                    0.1, 
-                                    type="call"
-                                )
-                                new_iv = r.get(b.symbol+"_iv") 
-                                if (new_iv != None):
-                                    val = new_iv.decode("utf-8")
-                                    iv = ast.literal_eval(val)
-                            else:
-                                q.enqueue(
-                                    cal_iv_queue, 
-                                    a.symbol, 
-                                    future.ltp, 
-                                    a.strike_price, 
-                                    days_to_expiry/365,
-                                    float(a.ltp), 
-                                    0.1, 
-                                    type="put"
-                                )
-                                new_iv = r.get(a.symbol+"_iv") 
-                                if (new_iv != None):
-                                    val = new_iv.decode("utf-8")
-                                    iv = ast.literal_eval(val)
-                            '''
-
-                            option_pair = (b, a, a.strike_price, iv)
-                            option_pairs.append(option_pair)
+                    newIV = r.get("iv_"+b.symbol.lower())
+                    if newIV != None:
+                        iv = (newIV).decode("utf-8")
+                    
+                    if(diff < closest_strike):
+                        closest_strike = diff
+                        closest_option = a
+                    if (a.symbol[-2:] == 'CE'):
+                        option_pair = (a, b, a.strike_price, iv)
+                        option_pairs.append(option_pair)
+                    else:
+                        option_pair = (b, a, a.strike_price, iv)
+                        option_pairs.append(option_pair)
         if call_OI == 0.0:
             call_OI = 1.0                
         pcr = round(put_OI/call_OI, 2)
