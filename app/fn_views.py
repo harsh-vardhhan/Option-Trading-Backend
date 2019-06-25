@@ -57,8 +57,8 @@ def get_access_token(request):
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
-    user_profile = json.loads(json.loads(u.get_profile()))
-    print(user_profile["client_id"])
+    user_profile = u.get_profile()
+    print(user_profile.client_id)
     return Response({"accessToken": access_token})
 
 @api_view(['POST'])
