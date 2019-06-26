@@ -67,7 +67,8 @@ def timed_job():
         expiry_date = date(2019, 7, 25)
 
         today = date.today()
-        days_to_expiry = expiry_date - today 
+        days_to_expiry = expiry_date - today
+        r.set("days_to_expiry", days_to_expiry.days)
         time_to_maturity = (days_to_expiry.days)/365
           
         upstox = create_session()
@@ -84,8 +85,10 @@ def timed_job():
             nse_index, indices),
             LiveFeedType.Full)
         equity_data = json.loads(json.dumps(equity))
-        r.set("stock_symbol",equity_data["symbol"])
-        r.set("stock_price",equity_data["ltp"])
+        equity_price = equity_data["ltp"]
+        equity_symbol = equity_data["symbol"]
+        r.set("stock_symbol", equity_symbol)
+        r.set("stock_price", equity_price)
 
 
         for key in r.scan_iter(symbol.lower()+"*"):

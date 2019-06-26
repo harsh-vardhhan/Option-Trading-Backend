@@ -328,6 +328,7 @@ def save_full_quotes_db(request):
 # TODO Schedule this function
 # TODO Perform IV Calculations here
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
+    print(request, symbol_req, expiry_date_req)
     request_data = json.loads(json.dumps(request.data))
     # create_session method exclusively while developing in online mode
     def create_session():
@@ -440,27 +441,10 @@ def get_full_quotes(request):
     indices = request_data['indices']
     symbol = request_data['symbol']
     expiry_date = request_data['expiry_date']
-    days_to_expiry = 0
+    if (expiry_date == "0"):
+        expiry_date = "19JUL"
     dates = list(Expiry_Date.objects.all())
     connection.close()
-    if expiry_date == "0":
-        expiry_date = dates[0].upstox_date
-        d1 = date.today()
-        expiry_date_string = dates[0].expiry_date
-        d2 = datetime.strptime(expiry_date_string, '%Y-%m-%d').date()
-        d = d2 - d1
-        days_to_expiry = d.days
-    else:
-        expiry_date_list = list(Expiry_Date\
-                                    .objects\
-                                    .all()\
-                                    .filter(upstox_date=expiry_date))
-        connection.close()
-        d1 = date.today()
-        expiry_date_string = expiry_date_list[0].expiry_date
-        d2 = datetime.strptime(expiry_date_string, '%Y-%m-%d').date()
-        d = d2 - d1
-        days_to_expiry = d.days
     def create_session(request):
         upstox = Upstox(api_key, access_token)
         return upstox
@@ -520,7 +504,7 @@ def get_full_quotes(request):
         "closest_strike" : toJson(closest_option),
         "future": r.get("future_price"),
         "lot_size": toJson(lot_size(symbol)),
-        "days_to_expiry": days_to_expiry,
+        "days_to_expiry": r.get("days_to_expiry"),
         "expiry_dates": toJson(dates),
         "expiry_date": expiry_date,
         "pcr": pcr
