@@ -18,7 +18,7 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 
 # NOTE token r.set only in DEV mode
-#r.set("access_token", "25b244b45aa36c10205b6cd8898e8df8667b940e")
+#r.set("access_token", "a76f263585d1d9500fa4af77f7c966cfc1daaf84")
 access_token = r.get("access_token").decode("utf-8")
 
 #@sched.scheduled_job('interval', seconds=10)
@@ -54,6 +54,10 @@ def create_session():
         upstox = Upstox(api_key, access_token)
         return upstox
 
+'''
+TODO use symbol NIFTY and BANKNIFTY to differentiate
+keys for attributes when changing option or expiry
+'''
 def timed_job():
         #values to be iterated
         symbol = "NIFTY"
@@ -73,13 +77,16 @@ def timed_job():
             LiveFeedType.Full)
         future_data =  json.loads(json.dumps(future))
         future_price = future_data["ltp"]
+        r.set("future_price", future_price)
 
         upstox.get_master_contract(nse_index)
         equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
             nse_index, indices),
             LiveFeedType.Full)
         equity_data = json.loads(json.dumps(equity))
-        equity_price = equity_data["ltp"]
+        r.set("stock_symbol",equity_data["symbol"])
+        r.set("stock_price",equity_data["ltp"])
+
 
         for key in r.scan_iter(symbol.lower()+"*"):
                 instrument = ast.literal_eval((r.get(key)).decode("utf-8"))

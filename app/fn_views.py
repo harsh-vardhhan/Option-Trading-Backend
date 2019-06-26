@@ -422,7 +422,7 @@ def store_dates():
     Expiry_Date.objects.all().delete()
     Expiry_Date(
         upstox_date = "19JUL",
-        expiry_date = str(date(2019, 6, 27)),
+        expiry_date = str(date(2019, 7, 25)),
         label_date = "25 JULY (Monthly)",
         future_date = "19JUL"
     ).save()
@@ -464,53 +464,6 @@ def get_full_quotes(request):
     def create_session(request):
         upstox = Upstox(api_key, access_token)
         return upstox
-    def search_equity():
-        upstox = create_session(request)
-        upstox.get_master_contract(nse_index)
-        equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            nse_index, indices),
-            LiveFeedType.Full)
-        equity_data = json.loads(json.dumps(equity))
-        stock = Instrument(
-            equity_data['exchange'], "", "", 
-            equity_data['symbol'], "", 
-            equity_data['ltp'], "", 0.0, "", "", "", ""
-        )
-        return stock
-    def search_future():
-        upstox = create_session(request)
-        upstox.get_master_contract(master_contract_FO)
-        list_options = list(Expiry_Date
-                            .objects\
-                            .all()\
-                            .filter(upstox_date=expiry_date))
-        connection.close()
-        future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            master_contract_FO, symbol+list_options[0].future_date+'FUT'),
-            LiveFeedType.Full)
-        future_data =  json.loads(json.dumps(future))
-        future_stock = Full_Quote(
-            strike_price = 0,
-            exchange = future_data['exchange'],
-            symbol = future_data['symbol'],
-            ltp = future_data['ltp'],
-            close = future_data['close'],
-            open = future_data['open'],
-            high = future_data['high'],
-            low = future_data['low'],
-            vtt = future_data['vtt'],
-            atp = future_data['atp'],
-            oi = future_data['oi'],
-            spot_price = future_data['spot_price'],
-            total_buy_qty = future_data['total_buy_qty'],
-            total_sell_qty = future_data['total_sell_qty'],
-            lower_circuit = future_data['lower_circuit'],
-            upper_circuit = future_data['upper_circuit'],
-            yearly_low = future_data['yearly_low'],
-            yearly_high = future_data['yearly_high'],
-            ltt = future_data['ltt']
-        )
-        return future_stock
     def pairing():
         q = Queue(connection=conn)
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
@@ -519,17 +472,15 @@ def get_full_quotes(request):
         option_pairs = []
         closest_strike = 10000000
         closest_option = ""
-        equity = search_equity()
         call_OI = 0.0
         put_OI = 0.0
         iv = 0.0
-        future = search_future()
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
                 # remove strikes which are less than ₹ 10,000 
                 if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
                     # arrange option pair always in CE and PE order
-                    diff = abs(float(equity.name) - float(a.strike_price))
+                    diff = abs(float(r.get("stock_price")) - float(a.strike_price))
                     call_OI = call_OI + to_lakh(a.oi)
                     put_OI = put_OI + to_lakh(b.oi)
                     
@@ -562,11 +513,12 @@ def get_full_quotes(request):
         elif ("BANKNIFTY"):
             return 20
     return Response({
-        "stock": toJson(search_equity()),
+        "stock_price": r.get("stock_price"),
+        "stock_symbol": r.get("stock_symbol"),
         "options": toJson(option_pairs),
         "symbol": symbol,
         "closest_strike" : toJson(closest_option),
-        "future": toJson(search_future()),
+        "future": r.get("future_price"),
         "lot_size": toJson(lot_size(symbol)),
         "days_to_expiry": days_to_expiry,
         "expiry_dates": toJson(dates),
