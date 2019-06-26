@@ -55,73 +55,84 @@ def create_session():
         return upstox
 
 '''
-TODO use symbol NIFTY and BANKNIFTY to differentiate
-keys for attributes when changing option or expiry
+TODO move closest strike and PCR on worker
 '''
 def timed_job():
         #values to be iterated
-        symbol = "NIFTY"
+        symbol_1 = "NIFTY"
+        indices_1= "NIFTY_50"
+        
+        symbol_2 = "BANKNIFTY"
+        indices_2= "NIFTY_BANK"
+        
         nse_index = 'NSE_INDEX'
-        indices= "NIFTY_50"
         future_date = "19JUL"
         expiry_date = date(2019, 7, 25)
 
-        today = date.today()
-        days_to_expiry = expiry_date - today
-        r.set("days_to_expiry", days_to_expiry.days)
-        time_to_maturity = (days_to_expiry.days)/365
-          
-        upstox = create_session()
-        upstox.get_master_contract(master_contract_FO)
-        future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            master_contract_FO, symbol+future_date+'FUT'),
-            LiveFeedType.Full)
-        future_data =  json.loads(json.dumps(future))
-        future_price = future_data["ltp"]
-        r.set("future_price", future_price)
+        symbols = []
+        symbol_indices_2 = (symbol_2, indices_2)
+        symbol_indices_1 = (symbol_1, indices_1)
+        symbols.append(symbol_indices_1)
+        symbols.append(symbol_indices_2)
 
-        upstox.get_master_contract(nse_index)
-        equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-            nse_index, indices),
-            LiveFeedType.Full)
-        equity_data = json.loads(json.dumps(equity))
-        equity_price = equity_data["ltp"]
-        equity_symbol = equity_data["symbol"]
-        r.set("stock_symbol", equity_symbol)
-        r.set("stock_price", equity_price)
-
-
-        for key in r.scan_iter(symbol.lower()+"*"):
-                instrument = ast.literal_eval((r.get(key)).decode("utf-8"))
-                symbol = (key).decode("utf-8")
-                strike_price = float((r.get("s_"+symbol)).decode("utf-8"))
+        for symbol in symbols:
+                today = date.today()
+                days_to_expiry = expiry_date - today
+                r.set("days_to_expiry", days_to_expiry.days)
+                time_to_maturity = (days_to_expiry.days)/365
                 
-                if (symbol[-2:] =="ce" 
-                        and strike_price > equity_price 
-                        and instrument["oi"] > 0):                                      
-                        r.set("iv_"+symbol,cal_iv(
-                                future_price,
-                                strike_price,
-                                time_to_maturity,
-                                instrument["ltp"], 
-                                0.1, 
-                                0.25,
-                                0.0001, 
-                                "call"
-                                ))
-                elif(symbol[-2:] =="pe" 
-                        and strike_price < equity_price 
-                        and instrument["oi"] > 0):
-                        r.set("iv_"+symbol,cal_iv(
-                                future_price,
-                                strike_price,
-                                time_to_maturity,
-                                instrument["ltp"],
-                                0.1,
-                                0.25,
-                                0.0001, 
-                                "put"
-                                ))
+                upstox = create_session()
+                upstox.get_master_contract(master_contract_FO)
+                future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+                master_contract_FO, symbol[0]+future_date+'FUT'),
+                LiveFeedType.Full)
+                future_data =  json.loads(json.dumps(future))
+                future_price = future_data["ltp"]
+                r.set(symbol[0]+"future_price", future_price)
+
+                upstox.get_master_contract(nse_index)
+                equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+                nse_index, symbol[1]),
+                LiveFeedType.Full)
+                equity_data = json.loads(json.dumps(equity))
+                equity_price = equity_data["ltp"]
+                equity_symbol = equity_data["symbol"]
+                r.set(symbol[0]+"stock_symbol", equity_symbol)
+                r.set(symbol[0]+"stock_price", equity_price)
+
+
+                for key in r.scan_iter((symbol[0]).lower()+"*"):
+                        instrument = ast.literal_eval((r.get(key)).decode("utf-8"))
+                        instrument_symbol = (key).decode("utf-8")
+                        strike_price = float((r.get("s_"+instrument_symbol).decode("utf-8")))
+                        
+                        if (instrument_symbol[-2:] =="ce" 
+                                and strike_price > equity_price 
+                                and instrument["oi"] > 0):                                      
+                                r.set("iv_"+instrument_symbol,cal_iv(
+                                        future_price,
+                                        strike_price,
+                                        time_to_maturity,
+                                        instrument["ltp"], 
+                                        0.1, 
+                                        0.25,
+                                        0.0001, 
+                                        "call"
+                                        ))
+                        elif(instrument_symbol[-2:] =="pe" 
+                                and strike_price < equity_price 
+                                and instrument["oi"] > 0):
+                                r.set("iv_"+instrument_symbol,cal_iv(
+                                        future_price,
+                                        strike_price,
+                                        time_to_maturity,
+                                        instrument["ltp"],
+                                        0.1,
+                                        0.25,
+                                        0.0001, 
+                                        "put"
+                                        ))
+
 
 timed_job()
 

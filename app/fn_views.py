@@ -328,7 +328,6 @@ def save_full_quotes_db(request):
 # TODO Schedule this function
 # TODO Perform IV Calculations here
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
-    print(request, symbol_req, expiry_date_req)
     request_data = json.loads(json.dumps(request.data))
     # create_session method exclusively while developing in online mode
     def create_session():
@@ -464,7 +463,7 @@ def get_full_quotes(request):
                 # remove strikes which are less than ₹ 10,000 
                 if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
                     # arrange option pair always in CE and PE order
-                    diff = abs(float(r.get("stock_price")) - float(a.strike_price))
+                    diff = abs(float(r.get(symbol+"stock_price")) - float(a.strike_price))
                     call_OI = call_OI + to_lakh(a.oi)
                     put_OI = put_OI + to_lakh(b.oi)
                     
@@ -497,12 +496,12 @@ def get_full_quotes(request):
         elif ("BANKNIFTY"):
             return 20
     return Response({
-        "stock_price": r.get("stock_price"),
-        "stock_symbol": r.get("stock_symbol"),
+        "stock_price": r.get(symbol+"stock_price"),
+        "stock_symbol": r.get(symbol+"stock_symbol"),
         "options": toJson(option_pairs),
         "symbol": symbol,
         "closest_strike" : toJson(closest_option),
-        "future": r.get("future_price"),
+        "future": r.get(symbol+"future_price"),
         "lot_size": toJson(lot_size(symbol)),
         "days_to_expiry": r.get("days_to_expiry"),
         "expiry_dates": toJson(dates),
