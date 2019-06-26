@@ -21,6 +21,7 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 
+'''
 # ws://localhost:8000/ws/access_token/
 # Use POST method to get the skeleton and WebSocket to feed independent cells
 class stock_consumer(AsyncWebsocketConsumer):
@@ -48,7 +49,7 @@ class stock_consumer(AsyncWebsocketConsumer):
                   else:
                      return r.get(subscribed_key).decode("utf-8")
                subscribed_access_token = get_key()
-               '''
+
                if(r.exists(subscribed_key) == False):      
                      q = Queue(connection=conn)
                      q.enqueue(instrument_subscribe_queue, 
@@ -60,7 +61,7 @@ class stock_consumer(AsyncWebsocketConsumer):
                      q.enqueue(instrument_subscribe_queue, 
                                access_token, 
                                a.exchange, a.symbol, b.symbol)
-               '''
+
       connection.close()   
       u.start_websocket(True)
       def quote_update(message):
@@ -86,4 +87,41 @@ class stock_consumer(AsyncWebsocketConsumer):
          "type": "websocket_receive",
          "text": (message)    
       })
+'''
+
+def start_socket():
+   u = Upstox(api_key, r.get("access_token").decode("utf-8"))    
+   u.get_master_contract('NSE_FO')
+   list_options = Full_Quote.objects\
+                            .all()\
+                            .order_by('strike_price')
+   connection.close()
+   def to_lakh(n):
+         return float(round(n/100000, 1))
+
+   access_token = r.get("access_token").decode("utf-8")
+
+   for a, b in it.combinations(list_options, 2):
+      if (a.strike_price == b.strike_price):
+         if to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0:
+            q = Queue(connection=conn)
+            q.enqueue(instrument_subscribe_queue, 
+                        access_token, 
+                        a.exchange, 
+                        a.symbol, 
+                        b.symbol
+                     )
+
+   def quote_update(message):
+      messageData = json.loads(json.dumps(message))
+      symbol = (messageData['symbol'])
+      r.set(symbol, messageData)
+
+   def websocket_stopped(message):
+      u.start_websocket(True)
+
+   u.set_on_quote_update(quote_update)
+   u.start_websocket(True)
+   u.set_on_disconnect (websocket_stopped)
+
 

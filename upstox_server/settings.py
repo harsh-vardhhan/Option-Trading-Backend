@@ -34,7 +34,6 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    "channels",
     "app",
     "background_task",
     "django.contrib.admin",
@@ -87,6 +86,7 @@ redis_host = os.environ.get('REDIS_HOST', 'localhost')
 
 # Channel layer definitions
 # http://channels.readthedocs.io/en/latest/topics/channel_layers.html
+'''
 CHANNEL_LAYERS = {
     "default": {
         # This example app uses the Redis channel layer implementation channels_redis
@@ -96,10 +96,20 @@ CHANNEL_LAYERS = {
         }
     },
 }
+'''
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "CONFIG": {
+             "hosts": [os.getenv('REDISTOGO_URL', 'redis://localhost:6379')],
+        }
+    }
+}
 
 
 WSGI_APPLICATION = "upstox_server.wsgi.application"
-ASGI_APPLICATION = "upstox_server.routing.application"
+#ASGI_APPLICATION = "upstox_server.routing.application"
 
 
 # Database

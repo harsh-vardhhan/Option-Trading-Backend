@@ -19,6 +19,7 @@ import requests
 import ast
 import os
 from math import sqrt
+from app.consumers import start_socket
 
 ''' 
 _strike_price : Instrument Options -> To fetch option strikes
@@ -38,6 +39,8 @@ master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
+
+#start_socket()
 
 
 @api_view()
@@ -448,24 +451,14 @@ def get_full_quotes(request):
         upstox = Upstox(api_key, access_token)
         return upstox
     def pairing():
-        q = Queue(connection=conn)
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
-        def to_lakh(n):
-            return float(round(n/100000, 1))
         option_pairs = []
-        closest_strike = 10000000
-        closest_option = ""
-        call_OI = 0.0
-        put_OI = 0.0
         iv = 0.0
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
                 # remove strikes which are less than ₹ 10,000 
-                if (to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0):
+                if (a.oi > 0.0 and b.oi > 0.0):
                     # arrange option pair always in CE and PE order
-                    diff = abs(float(r.get(symbol+"stock_price")) - float(a.strike_price))
-                    call_OI = call_OI + to_lakh(a.oi)
-                    put_OI = put_OI + to_lakh(b.oi)
                     
                     newIV = r.get("iv_"+a.symbol.lower())
                     if newIV != None:
@@ -474,22 +467,16 @@ def get_full_quotes(request):
                     newIV = r.get("iv_"+b.symbol.lower())
                     if newIV != None:
                         iv = (newIV).decode("utf-8")
-                    
-                    if(diff < closest_strike):
-                        closest_strike = diff
-                        closest_option = a
+                        
                     if (a.symbol[-2:] == 'CE'):
                         option_pair = (a, b, a.strike_price, iv)
                         option_pairs.append(option_pair)
                     else:
                         option_pair = (b, a, a.strike_price, iv)
                         option_pairs.append(option_pair)
-        if call_OI == 0.0:
-            call_OI = 1.0                
-        pcr = round(put_OI/call_OI, 2)
         connection.close()
-        return option_pairs, closest_option, pcr
-    option_pairs, closest_option, pcr = pairing()
+        return option_pairs
+    option_pairs = pairing()
     def lot_size(symbol):
         if (symbol == "NIFTY"):
             return 75
@@ -500,11 +487,11 @@ def get_full_quotes(request):
         "stock_symbol": r.get(symbol+"stock_symbol"),
         "options": toJson(option_pairs),
         "symbol": symbol,
-        "closest_strike" : toJson(closest_option),
+        "closest_strike" : float(r.get(symbol+expiry_date+"closest_strike").decode("utf-8")),
         "future": r.get(symbol+"future_price"),
         "lot_size": toJson(lot_size(symbol)),
         "days_to_expiry": r.get("days_to_expiry"),
         "expiry_dates": toJson(dates),
         "expiry_date": expiry_date,
-        "pcr": pcr
+        "pcr": r.get(symbol+expiry_date+"PCR")
     })

@@ -8,6 +8,7 @@ from upstox_api.api import Session, Upstox, LiveFeedType, OHLCInterval
 from datetime import date
 import numpy as np
 import scipy.stats as si
+import itertools as it
 
 sched = BlockingScheduler()
 
@@ -100,39 +101,85 @@ def timed_job():
                 r.set(symbol[0]+"stock_symbol", equity_symbol)
                 r.set(symbol[0]+"stock_price", equity_price)
 
+                '''
+                for a, b in it.combinations(r.scan_iter((symbol[0]).lower()+"*"), 2):
+                        instrument_a = ast.literal_eval((r.get(a)).decode("utf-8"))
+                        instrument_b = ast.literal_eval((r.get(b)).decode("utf-8"))
+                        instrument_symbol_a = (a).decode("utf-8")
+                        instrument_symbol_b = (b).decode("utf-8")
+                        strike_price_a = float((r.get("s_"+instrument_symbol_a).decode("utf-8")))
+                        strike_price_b = float((r.get("s_"+instrument_symbol_b).decode("utf-8")))
+                        
+                        symbol_call = ""
+                        symbol_put = ""                   
 
+
+                        if (instrument_symbol_a[-2:] == "ce"):
+                                symbol_call = instrument_symbol_a
+                        else:
+                                symbol_put = instrument_symbol_a
+
+                        if (instrument_symbol_b[-2:] == "ce"):
+                                symbol_call = instrument_symbol_b
+                        else:
+                                symbol_put = instrument_symbol_b
+
+                        if (strike_price_a == strike_price_b):
+                                print(symbol_call, symbol_put)
+                '''
+
+                call_OI = 0.0
+                put_OI = 0.0
+                def to_lakh(n):
+                        return float(round(n/100000, 1))
+                closest_strike = 10000000
+                closest_option = ""
+         
                 for key in r.scan_iter((symbol[0]).lower()+"*"):
                         instrument = ast.literal_eval((r.get(key)).decode("utf-8"))
                         instrument_symbol = (key).decode("utf-8")
                         strike_price = float((r.get("s_"+instrument_symbol).decode("utf-8")))
-                        
-                        if (instrument_symbol[-2:] =="ce" 
-                                and strike_price > equity_price 
-                                and instrument["oi"] > 0):                                      
-                                r.set("iv_"+instrument_symbol,cal_iv(
-                                        future_price,
-                                        strike_price,
-                                        time_to_maturity,
-                                        instrument["ltp"], 
-                                        0.1, 
-                                        0.25,
-                                        0.0001, 
-                                        "call"
-                                        ))
-                        elif(instrument_symbol[-2:] =="pe" 
-                                and strike_price < equity_price 
-                                and instrument["oi"] > 0):
-                                r.set("iv_"+instrument_symbol,cal_iv(
-                                        future_price,
-                                        strike_price,
-                                        time_to_maturity,
-                                        instrument["ltp"],
-                                        0.1,
-                                        0.25,
-                                        0.0001, 
-                                        "put"
-                                        ))
+                        diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
+                
+                        if(to_lakh(instrument["oi"]) > 0.0):
 
+                                if(diff < closest_strike):
+                                        closest_strike = diff
+                                        closest_option = strike_price
+
+                                if (instrument_symbol[-2:] =="ce"):
+                                        call_OI = call_OI + to_lakh(instrument["oi"])
+                                        if (strike_price > equity_price):                               
+                                                r.set("iv_"+instrument_symbol,cal_iv(
+                                                        future_price,
+                                                        strike_price,
+                                                        time_to_maturity,
+                                                        instrument["ltp"], 
+                                                        0.1, 
+                                                        0.25,
+                                                        0.0001, 
+                                                        "call"
+                                                        ))
+                     
+                                elif(instrument_symbol[-2:] =="pe"):
+                                        put_OI = put_OI + to_lakh(instrument["oi"])
+                                        if (strike_price < equity_price):
+                                                r.set("iv_"+instrument_symbol,cal_iv(
+                                                        future_price,
+                                                        strike_price,
+                                                        time_to_maturity,
+                                                        instrument["ltp"],
+                                                        0.1,
+                                                        0.25,
+                                                        0.0001, 
+                                                        "put"
+                                                        ))
+                
+                if call_OI == 0.0:
+                        call_OI = 1.0 
+                pcr = round(put_OI/call_OI, 2)
+                r.set(symbol[0]+future_date+"closest_strike",closest_option)
+                r.set(symbol[0]+future_date+"PCR",pcr)
 
 timed_job()
 
