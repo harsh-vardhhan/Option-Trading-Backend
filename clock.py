@@ -85,16 +85,16 @@ def timed_job():
                 upstox = create_session()
                 upstox.get_master_contract(master_contract_FO)
                 future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-                master_contract_FO, symbol[0]+future_date+'FUT'),
-                LiveFeedType.Full)
-                future_data =  json.loads(json.dumps(future))
+                        master_contract_FO, symbol[0]+future_date+'FUT'),
+                        LiveFeedType.Full)
+                future_data = json.loads(json.dumps(future))
                 future_price = future_data["ltp"]
                 r.set(symbol[0]+"future_price", future_price)
 
                 upstox.get_master_contract(nse_index)
                 equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-                nse_index, symbol[1]),
-                LiveFeedType.Full)
+                        nse_index, symbol[1]),
+                        LiveFeedType.Full)
                 equity_data = json.loads(json.dumps(equity))
                 equity_price = equity_data["ltp"]
                 equity_symbol = equity_data["symbol"]
@@ -136,7 +136,7 @@ def timed_job():
                 closest_option = ""
          
                 for key in r.scan_iter((symbol[0]).lower()+"*"):
-                        instrument = ast.literal_eval((r.get(key)).decode("utf-8"))
+                        instrument = json.loads((r.get(key)).decode("utf-8"))
                         instrument_symbol = (key).decode("utf-8")
                         strike_price = float((r.get("s_"+instrument_symbol).decode("utf-8")))
                         diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
@@ -147,7 +147,7 @@ def timed_job():
                                         closest_strike = diff
                                         closest_option = strike_price
 
-                                if (instrument_symbol[-2:] =="ce"):
+                                if (instrument_symbol[-2:] == "ce"):
                                         call_OI = call_OI + to_lakh(instrument["oi"])
                                         if (strike_price > equity_price):                               
                                                 r.set("iv_"+instrument_symbol,cal_iv(
@@ -176,7 +176,7 @@ def timed_job():
                                                         ))
                 
                 if call_OI == 0.0:
-                        call_OI = 1.0 
+                    call_OI = 1.0
                 pcr = round(put_OI/call_OI, 2)
                 r.set(symbol[0]+future_date+"closest_strike",closest_option)
                 r.set(symbol[0]+future_date+"PCR",pcr)

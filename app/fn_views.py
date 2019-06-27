@@ -22,9 +22,10 @@ from math import sqrt
 from app.consumers import start_socket
 
 ''' 
-_strike_price : Instrument Options -> To fetch option strikes
-_ : Full Quotes Options
-_c : Calcuates Options
+s_   : Instrument Options -> To fetch option strikes
+_    : Full Quotes Options
+c_   : Calcuates Options
+sub_ : Subscribed Options
 '''
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
@@ -40,7 +41,8 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
-#start_socket()
+
+r.set("access_token","698a8f5f29ba77d5be12e5def681b9bd69732980")
 
 
 @api_view()
@@ -61,61 +63,11 @@ def get_access_token(request):
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
     user_profile = u.get_profile()
+    # Only Admin should have the Rights to start webscoket
     if (user_profile.get('client_id') == client_id):
         r.set("access_token", access_token)
+        start_socket()
     return Response({"accessToken": access_token})
-
-@api_view(['POST'])
-def get_access_token_admin(request):
-    request_data = json.loads(json.dumps(request.data))
-    session = Session(api_key)
-    session.set_redirect_uri(redirect_uri)
-    session.set_api_secret(secret_key)
-
-    
-    session.set_code(request_data['requestcode'])
-    access_token = session.retrieve_access_token()
-    r.set("access_token", access_token)
-    return Response({"accessToken": access_token})
-
-
-
-@api_view(['POST'])
-def historical_option(request):
-    request_data = json.loads(json.dumps(request.data))
-    access_token = request_data['accessToken']
-    def create_session(request):
-        upstox = Upstox(api_key, access_token)
-        return upstox
-    def fetch_option():
-        upstox = create_session(request)
-        upstox.get_master_contract(nse_index)
-        historical =  upstox.get_ohlc(
-            upstox.get_instrument_by_symbol(nse_index, 'NIFTY_50'), 
-            OHLCInterval.Day_1, datetime.strptime('06/06/2018', '%d/%m/%Y').date(), 
-            datetime.strptime('06/06/2019', '%d/%m/%Y').date()
-        )
-        historical_array = []
-        for ops in historical:
-             symbol = json.loads(json.dumps(ops))
-             date = (datetime.fromtimestamp(int(symbol['timestamp'])/1000))
-             closing = symbol['close']
-             option_data = (date, closing)
-             historical_array.append(option_data)
-        return historical_array
-    def historic_sigma():
-        option_list = fetch_option()
-        ltp_changes = []
-        old_close = 0.0
-        for idx, ops in enumerate(option_list):
-            if(idx > 0):
-                ltp_change_val = (float(ops[1])/float(old_close)) - 1.0
-                ltp_changes.append(ltp_change_val)
-            old_close = ops[1]
-        historic_sigma = stdev(ltp_changes)* sqrt(252) * 100
-    ltp_change()
-    return Response({"historical": (fetch_option())})
-
  
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
@@ -165,19 +117,20 @@ def save_option(request):
                         # NIFTY and BANKNIFTY alongs brings
                         # along this and it lacks liquidity
                         if symbol_val[:7] != niftyit:
-                            def save_option_db(expiry,
-                                                exchange_val,
-                                                token_val,
-                                                parent_token_val,
-                                                symbol_val,
-                                                name_val,
-                                                closing_price_val,
-                                                expiry_val,
-                                                strike_price_val,
-                                                tick_size_val,
-                                                lot_size_val,
-                                                instrument_type_val,
-                                                isin_val):
+                            def save_option_db(
+                                expiry,
+                                exchange_val,
+                                token_val,
+                                parent_token_val,
+                                symbol_val,
+                                name_val,
+                                closing_price_val,
+                                expiry_val,
+                                strike_price_val,
+                                tick_size_val,
+                                lot_size_val,
+                                instrument_type_val,
+                                isin_val):
                                 if expiry >= get_first_date() and expiry <= get_last_date():
                                     if ops[5] is None:
                                             closing_price_val = ''
@@ -186,21 +139,21 @@ def save_option(request):
                                     if ops[7] is None:
                                             strike_price_val = ''
                                     Instrument(
-                                        exchange = exchange_val, 
-                                        token = token_val,
-                                        parent_token = parent_token_val, 
-                                        symbol = symbol_val, 
-                                        name = name_val,
-                                        closing_price = closing_price_val,
-                                        expiry = expiry_val,
-                                        strike_price = float(strike_price_val), 
-                                        tick_size = tick_size_val, 
-                                        lot_size = lot_size_val,
-                                        instrument_type = instrument_type_val, 
-                                        isin = isin_val
+                                        exchange=exchange_val,
+                                        token=token_val,
+                                        parent_token=parent_token_val,
+                                        symbol=symbol_val,
+                                        name=name_val,
+                                        closing_price=closing_price_val,
+                                        expiry=expiry_val,
+                                        strike_price=float(strike_price_val), 
+                                        tick_size=tick_size_val,
+                                        lot_size=lot_size_val,
+                                        instrument_type=instrument_type_val, 
+                                        isin=isin_val
                                     ).save()
                                     r.set("s_"+symbol_val, float(strike_price_val))
-                                    #r.set(instrument.symbol, instrument)
+                                    # r.set(instrument.symbol, instrument)
                                     all_options.append(Instrument(
                                         ops[0], ops[1], ops[2], ops[3], ops[4],
                                         ops[5], ops[6], ops[7], ops[8], ops[9],
@@ -210,33 +163,35 @@ def save_option(request):
                                 symbol_len = len(symbol)
                                 symbol_cache = symbol_val[:symbol_len]
                                 if symbol == symbol_cache.upper():
-                                    save_option_db(expiry,
-                                                    exchange_val,
-                                                    token_val,
-                                                    parent_token_val,
-                                                    symbol_val,
-                                                    name_val,
-                                                    closing_price_val,
-                                                    expiry_val,
-                                                    strike_price_val,
-                                                    tick_size_val,
-                                                    lot_size_val,
-                                                    instrument_type_val,
-                                                    isin_val)
+                                    save_option_db(
+                                        expiry,
+                                        exchange_val,
+                                        token_val,
+                                        parent_token_val,
+                                        symbol_val,
+                                        name_val,
+                                        closing_price_val,
+                                        expiry_val,
+                                        strike_price_val,
+                                        tick_size_val,
+                                        lot_size_val,
+                                        instrument_type_val,
+                                        isin_val)
                             else:
-                                save_option_db(expiry,
-                                                exchange_val,
-                                                token_val,
-                                                parent_token_val,
-                                                symbol_val,
-                                                name_val,
-                                                closing_price_val,
-                                                expiry_val,
-                                                strike_price_val,
-                                                tick_size_val,
-                                                lot_size_val,
-                                                instrument_type_val,
-                                                isin_val)
+                                save_option_db(
+                                    expiry,
+                                    exchange_val,
+                                    token_val,
+                                    parent_token_val,
+                                    symbol_val,
+                                    name_val,
+                                    closing_price_val,
+                                    expiry_val,
+                                    strike_price_val,
+                                    tick_size_val,
+                                    lot_size_val,
+                                    instrument_type_val,
+                                    isin_val)
         return all_options
     list_options()
     return Response({"Message": "Options Saved"})
@@ -252,6 +207,7 @@ def cache_full_quotes_redis(request):
     access_token = request_data['accessToken']
     list_options = Instrument.objects.all()
     q = Queue(connection=conn)
+
     def create_session(accessToken):
         upstox = Upstox(api_key, access_token)
         return upstox
@@ -354,12 +310,11 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                 for expiry_date in expiry_dates:
                     symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
                     if (symbol_date.upper() == expiry_date.upstox_date):
-                        lowercase_symbol = ops.symbol
-                        symbol_key = r.get(lowercase_symbol.upper())
+                        uppercase_symbol = ops.symbol
+                        symbol_key = r.get(uppercase_symbol.lower())
                         if (symbol_key != None):
-                            symbol_decoded = symbol_key.decode("utf-8")
-                            val = symbol_key.decode("utf-8")
-                            option = ast.literal_eval(val)
+                            symbol_decoded =  symbol_key.decode('utf-8')
+                            option = json.loads((symbol_decoded))
                             full_quote_obj = Full_Quote(
                                 strike_price = ops.strike_price,
                                 exchange = option['exchange'],
@@ -380,29 +335,6 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                                 yearly_low = option['yearly_low'],
                                 yearly_high = option['yearly_high'],
                                 ltt = option['ltt']
-                            )
-                            full_quotes.append(full_quote_obj)
-                        else:
-                            full_quote_obj = Full_Quote(
-                                strike_price = ops.strike_price,
-                                exchange =  ops.exchange,
-                                symbol =  ops.symbol,
-                                ltp =  ops.ltp,
-                                close =  ops.close,
-                                open =  ops.open,
-                                high =  ops.high,
-                                low =  ops.low,
-                                vtt =  ops.vtt,
-                                atp =  ops.atp,
-                                oi =  ops.oi,
-                                spot_price =  ops.spot_price,
-                                total_buy_qty =  ops.total_buy_qty,
-                                total_sell_qty =  ops.total_sell_qty,
-                                lower_circuit =  ops.lower_circuit,
-                                upper_circuit =  ops.upper_circuit,
-                                yearly_low =  ops.yearly_low,
-                                yearly_high = ops.yearly_high,
-                                ltt =  ops.ltt,
                             )
                             full_quotes.append(full_quote_obj)
     connection.close()
