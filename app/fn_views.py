@@ -29,7 +29,7 @@ sub_ : Subscribed Options
 '''
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
-r = redis.from_url(redis_url)
+r = redis.from_url(redis_url) 
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 redirect_uri = 'https://www.explainoid.com/home'
@@ -42,8 +42,10 @@ niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
 
-r.set("access_token","698a8f5f29ba77d5be12e5def681b9bd69732980")
+# r.set("access_token","698a8f5f29ba77d5be12e5def681b9bd69732980")
 
+if (user_profile.get('client_id') == client_id):
+    start_socket()
 
 @api_view()
 def get_redirect_url(request):
@@ -66,7 +68,6 @@ def get_access_token(request):
     # Only Admin should have the Rights to start webscoket
     if (user_profile.get('client_id') == client_id):
         r.set("access_token", access_token)
-        start_socket()
     return Response({"accessToken": access_token})
  
 # change the enitre function into a one time event saved to PostgreSQL
@@ -97,7 +98,7 @@ def save_option(request):
         all_options = []
         Instrument.objects.all().delete()
         for symbol in symbols:
-            for ops in search_options(symbol):          
+            for ops in search_options(symbol):       
                 expiry = int(ops[6])
                 exchange_val = ops[0]
                 token_val = ops[1]
@@ -110,7 +111,7 @@ def save_option(request):
                 tick_size_val = ops[8]
                 lot_size_val = ops[9]
                 instrument_type_val = ops[10]
-                isin_val = ops[11]
+                isin_val = ops[11]   
                 if strike_price_val != None:
                     if closing_price_val != None:
                         # Avoid NIFTYIT since searching for 
@@ -314,7 +315,7 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                         symbol_key = r.get(uppercase_symbol.lower())
                         if (symbol_key != None):
                             symbol_decoded =  symbol_key.decode('utf-8')
-                            option = json.loads((symbol_decoded))
+                            option = json.loads(symbol_decoded)
                             full_quote_obj = Full_Quote(
                                 strike_price = ops.strike_price,
                                 exchange = option['exchange'],
@@ -414,6 +415,8 @@ def get_full_quotes(request):
             return 75
         elif ("BANKNIFTY"):
             return 20
+    print(symbol+expiry_date+"closest_strike")
+    print("*******",r.get(symbol+expiry_date+"closest_strike"))
     return Response({
         "stock_price": r.get(symbol+"stock_price"),
         "stock_symbol": r.get(symbol+"stock_symbol"),

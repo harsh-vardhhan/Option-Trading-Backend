@@ -19,7 +19,7 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 
 # NOTE token r.set only in DEV mode
-#r.set("access_token", "a76f263585d1d9500fa4af77f7c966cfc1daaf84")
+# r.set("access_token", "698a8f5f29ba77d5be12e5def681b9bd69732980")
 access_token = r.get("access_token").decode("utf-8")
 
 #@sched.scheduled_job('interval', seconds=10)
@@ -136,44 +136,48 @@ def timed_job():
                 closest_option = ""
          
                 for key in r.scan_iter((symbol[0]).lower()+"*"):
-                        instrument = json.loads((r.get(key)).decode("utf-8"))
-                        instrument_symbol = (key).decode("utf-8")
-                        strike_price = float((r.get("s_"+instrument_symbol).decode("utf-8")))
-                        diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
-                
-                        if(to_lakh(instrument["oi"]) > 0.0):
+                        #print(key)
+                        instrument_symbol = key.decode('utf-8')
+                        instrument = json.loads(r.get(key).decode('utf-8'))
 
-                                if(diff < closest_strike):
-                                        closest_strike = diff
-                                        closest_option = strike_price
+                        if(to_lakh(instrument.get("oi")) > 0.0):
+                                instrument_symbol = (key).decode("utf-8")
 
-                                if (instrument_symbol[-2:] == "ce"):
-                                        call_OI = call_OI + to_lakh(instrument["oi"])
-                                        if (strike_price > equity_price):                               
-                                                r.set("iv_"+instrument_symbol,cal_iv(
-                                                        future_price,
-                                                        strike_price,
-                                                        time_to_maturity,
-                                                        instrument["ltp"], 
-                                                        0.1, 
-                                                        0.25,
-                                                        0.0001, 
-                                                        "call"
-                                                        ))
-                     
-                                elif(instrument_symbol[-2:] =="pe"):
-                                        put_OI = put_OI + to_lakh(instrument["oi"])
-                                        if (strike_price < equity_price):
-                                                r.set("iv_"+instrument_symbol,cal_iv(
-                                                        future_price,
-                                                        strike_price,
-                                                        time_to_maturity,
-                                                        instrument["ltp"],
-                                                        0.1,
-                                                        0.25,
-                                                        0.0001, 
-                                                        "put"
-                                                        ))
+                                if r.get("s_"+instrument_symbol) != None:                              
+                                        strike_price = float(r.get("s_"+instrument_symbol).decode('utf-8'))
+                                        diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
+
+                                        if(diff < closest_strike):
+                                                closest_strike = diff
+                                                closest_option = strike_price
+
+                                        if (instrument_symbol[-2:] == "ce"):
+                                                call_OI = call_OI + to_lakh(instrument["oi"])
+                                                if (strike_price > equity_price):                               
+                                                        r.set("iv_"+instrument_symbol,cal_iv(
+                                                                future_price,
+                                                                strike_price,
+                                                                time_to_maturity,
+                                                                instrument["ltp"], 
+                                                                0.1, 
+                                                                0.25,
+                                                                0.0001, 
+                                                                "call"
+                                                                ))
+                        
+                                        elif(instrument_symbol[-2:] =="pe"):
+                                                put_OI = put_OI + to_lakh(instrument["oi"])
+                                                if (strike_price < equity_price):
+                                                        r.set("iv_"+instrument_symbol,cal_iv(
+                                                                future_price,
+                                                                strike_price,
+                                                                time_to_maturity,
+                                                                instrument["ltp"],
+                                                                0.1,
+                                                                0.25,
+                                                                0.0001, 
+                                                                "put"
+                                                                ))
                 
                 if call_OI == 0.0:
                     call_OI = 1.0
