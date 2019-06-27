@@ -43,9 +43,12 @@ symbols = ['NIFTY','BANKNIFTY']
 
 
 # r.set("access_token","698a8f5f29ba77d5be12e5def681b9bd69732980")
-
-if (user_profile.get('client_id') == client_id):
-    start_socket()
+if (r.get("access_token") != None):
+    access_token = r.get("access_token").decode('utf-8')
+    u = Upstox (api_key, access_token)
+    user_profile = u.get_profile()
+    if (user_profile.get('client_id') == client_id):
+        start_socket()
 
 @api_view()
 def get_redirect_url(request):
