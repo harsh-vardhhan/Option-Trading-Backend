@@ -26,6 +26,12 @@ s_   : Instrument Options -> To fetch option strikes
 _    : Full Quotes Options
 c_   : Calcuates Options
 sub_ : Subscribed Options
+g_   : Gamma of option
+v_   : Vega of option
+dc_  : Delta Call of option
+tc_  : Theta Call of option
+dp_  : Delta Put of option
+tp_  : Theta Put of option
 '''
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
@@ -42,7 +48,7 @@ niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
 
-# r.set("access_token","698a8f5f29ba77d5be12e5def681b9bd69732980")
+# r.set("access_token","d7bd21034aa99db4c003689d967d16f89c7c1667")
 if (r.get("access_token") != None):
     access_token = r.get("access_token").decode('utf-8')
     u = Upstox (api_key, access_token)
@@ -389,27 +395,49 @@ def get_full_quotes(request):
     def pairing():
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
         option_pairs = []
-        iv = 0.0
+        iv = 0.0,
+        delta_call = 0
+        theta_call = 0
+        delta_put = 0
+        theta_put = 0
+
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
                 # remove strikes which are less than ₹ 10,000 
                 if (a.oi > 0.0 and b.oi > 0.0):
                     # arrange option pair always in CE and PE order
                     
-                    newIV = r.get("iv_"+a.symbol.lower())
-                    if newIV != None:
-                        iv = (newIV).decode("utf-8")
+                    trimmed_symbol = (a.symbol.lower())[:-2]
+                    if r.get("g_"+trimmed_symbol) != None:
 
-                    newIV = r.get("iv_"+b.symbol.lower())
-                    if newIV != None:
-                        iv = (newIV).decode("utf-8")
+
+
+                        gamma = r.get("g_"+trimmed_symbol).decode('utf-8')
+                        vega = r.get("v_"+trimmed_symbol).decode('utf-8')
                         
-                    if (a.symbol[-2:] == 'CE'):
-                        option_pair = (a, b, a.strike_price, iv)
-                        option_pairs.append(option_pair)
-                    else:
-                        option_pair = (b, a, a.strike_price, iv)
-                        option_pairs.append(option_pair)
+                        newIV = r.get("iv_"+a.symbol.lower())
+                        if newIV != None:
+                            iv = (newIV).decode("utf-8")
+
+                        newIV = r.get("iv_"+b.symbol.lower())
+                        if newIV != None:
+                            iv = (newIV).decode("utf-8")
+                        
+                        if (a.symbol[-2:] == 'CE' or b.symbol[-2:] == 'CE'):
+                            delta_call = r.get("dc_"+trimmed_symbol).decode('utf-8')
+                            theta_call = r.get("tc_"+trimmed_symbol).decode('utf-8')
+                        
+                        if (a.symbol[-2:] == 'PE' or b.symbol[-2:] == 'PE'):
+                            delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
+                            theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')                     
+                            
+                        if (a.symbol[-2:] == 'CE'):
+
+                            option_pair = (a, b, a.strike_price, iv, gamma, vega, delta_call, theta_call, delta_put, theta_put)
+                            option_pairs.append(option_pair)
+                        else:
+                            option_pair = (b, a, a.strike_price, iv, gamma, vega, delta_call, theta_call, delta_put, theta_put)
+                            option_pairs.append(option_pair)
         connection.close()
         return option_pairs
     option_pairs = pairing()
@@ -418,8 +446,8 @@ def get_full_quotes(request):
             return 75
         elif ("BANKNIFTY"):
             return 20
-    print(symbol+expiry_date+"closest_strike")
-    print("*******",r.get(symbol+expiry_date+"closest_strike"))
+    print((symbol+expiry_date+"closest_strike"))
+    print(r.get(symbol+expiry_date+"closest_strike"))
     return Response({
         "stock_price": r.get(symbol+"stock_price"),
         "stock_symbol": r.get(symbol+"stock_symbol"),

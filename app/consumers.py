@@ -30,7 +30,7 @@ def start_socket():
    def to_lakh(n):
          return float(round(n/100000, 1))
 
-   r.set("access_token","698a8f5f29ba77d5be12e5def681b9bd69732980")
+   #r.set("access_token","d7bd21034aa99db4c003689d967d16f89c7c1667")
    access_token = r.get("access_token").decode("utf-8")
    q = Queue(connection=conn)
    for a, b in it.combinations(list_options, 2):
@@ -58,7 +58,6 @@ def start_socket():
    def quote_update(message):
       messageData = json.loads(json.dumps(message))
       symbol = (messageData['symbol'])
-      print(symbol)
       r.set(symbol.lower(), json.dumps(message).encode("utf-8"))
 
    def websocket_stopped(message):

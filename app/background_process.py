@@ -21,7 +21,7 @@ def full_quotes_queue(accessToken, symbol):
         master_contract_FO, symbol),
         LiveFeedType.Full)
     optionData = json.dumps(option).encode('utf-8')
-    #redis_obj.set(symbol, optionData)
+    redis_obj.set(symbol, optionData)
 
 
 def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
