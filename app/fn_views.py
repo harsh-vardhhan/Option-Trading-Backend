@@ -10,7 +10,6 @@ from dateutil import relativedelta
 from time import sleep
 import redis
 from rq import Queue
-from rq_scheduler import Scheduler
 from worker import conn
 from app.background_process import full_quotes_queue
 from statistics import stdev
