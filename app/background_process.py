@@ -35,7 +35,5 @@ def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
         str(exchange),
         str(b_symbol)), LiveFeedType.Full)
 
-def instrument_update_queue(symbol, messageData):
-    redis_obj.set(symbol, messageData)
 
 

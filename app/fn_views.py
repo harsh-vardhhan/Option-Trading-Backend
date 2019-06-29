@@ -48,7 +48,7 @@ niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
 
-# r.set("access_token","d7bd21034aa99db4c003689d967d16f89c7c1667")
+# r.set("access_token","0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05")
 if (r.get("access_token") != None):
     access_token = r.get("access_token").decode('utf-8')
     u = Upstox (api_key, access_token)
@@ -394,6 +394,7 @@ def get_full_quotes(request):
         return upstox
     def pairing():
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
+        print(list_options)
         option_pairs = []
         iv = 0.0,
         delta_call = 0
@@ -408,6 +409,7 @@ def get_full_quotes(request):
                     # arrange option pair always in CE and PE order
                     
                     trimmed_symbol = (a.symbol.lower())[:-2]
+                    print(r.get("g_"+trimmed_symbol))
                     if r.get("g_"+trimmed_symbol) != None:
 
 
@@ -446,8 +448,6 @@ def get_full_quotes(request):
             return 75
         elif ("BANKNIFTY"):
             return 20
-    print((symbol+expiry_date+"closest_strike"))
-    print(r.get(symbol+expiry_date+"closest_strike"))
     return Response({
         "stock_price": r.get(symbol+"stock_price"),
         "stock_symbol": r.get(symbol+"stock_symbol"),

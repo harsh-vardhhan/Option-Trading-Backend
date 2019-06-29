@@ -23,7 +23,7 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 
 # NOTE token r.set only in DEV mode
-r.set("access_token", "d7bd21034aa99db4c003689d967d16f89c7c1667")
+# r.set("access_token", "0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05")
 access_token = r.get("access_token").decode("utf-8")
 
 from datetime import datetime, time
@@ -89,7 +89,7 @@ def create_session():
 
 
 
-@sched.scheduled_job('interval', seconds=10)
+@sched.scheduled_job('interval', minutes=1)
 def timed_job():
                 
                 #values to be iterated
@@ -192,35 +192,35 @@ def timed_job():
                                                                         )
                                                                 r.set("iv_"+instrument_symbol, iv)
 
-                                        if iv == 0:
-                                                iv = 10.0
+                                                if iv == 0:
+                                                        iv = 10.0
 
-                                        Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
-                                                future_price,
-                                                strike_price,
-                                                time_to_maturity,
-                                                0.1,
-                                                iv
-                                                )
-                                        Delta_put, Theta_put = Greeks_put( 
-                                                future_price,
-                                                strike_price,
-                                                time_to_maturity,
-                                                0.1,
-                                                iv
-                                                )
-                                        Gamma_val = round(Gamma, 3)
-                                        Vega_val = round(Vega, 2)
-                                        Delta_call_val = round(Delta_call, 2) 
-                                        Theta_call_val = round(Theta_call, 2) 
-                                        Delta_put_val = round(Delta_put, 2)
-                                        Theta_put_val = round(Theta_put, 2) 
-                                        r.set("g_"+instrument_symbol[:-2],Gamma_val)
-                                        r.set("v_"+instrument_symbol[:-2],Vega_val)
-                                        r.set("dc_"+instrument_symbol[:-2],Delta_call_val)
-                                        r.set("tc_"+instrument_symbol[:-2],Theta_call_val)
-                                        r.set("dp_"+instrument_symbol[:-2],Delta_put_val)
-                                        r.set("tp_"+instrument_symbol[:-2],Theta_put_val)
+                                                Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
+                                                        future_price,
+                                                        strike_price,
+                                                        time_to_maturity,
+                                                        0.1,
+                                                        iv
+                                                        )
+                                                Delta_put, Theta_put = Greeks_put( 
+                                                        future_price,
+                                                        strike_price,
+                                                        time_to_maturity,
+                                                        0.1,
+                                                        iv
+                                                        )
+                                                Gamma_val = round(Gamma, 3)
+                                                Vega_val = round(Vega, 2)
+                                                Delta_call_val = round(Delta_call, 2) 
+                                                Theta_call_val = round(Theta_call, 2) 
+                                                Delta_put_val = round(Delta_put, 2)
+                                                Theta_put_val = round(Theta_put, 2) 
+                                                r.set("g_"+instrument_symbol[:-2],Gamma_val)
+                                                r.set("v_"+instrument_symbol[:-2],Vega_val)
+                                                r.set("dc_"+instrument_symbol[:-2],Delta_call_val)
+                                                r.set("tc_"+instrument_symbol[:-2],Theta_call_val)
+                                                r.set("dp_"+instrument_symbol[:-2],Delta_put_val)
+                                                r.set("tp_"+instrument_symbol[:-2],Theta_put_val)
                                         
                                         
                         

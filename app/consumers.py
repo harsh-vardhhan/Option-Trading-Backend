@@ -10,7 +10,7 @@ import itertools as it
 from django.core.cache import cache
 from rq import Queue
 from worker import conn
-from app.background_process import instrument_subscribe_queue, instrument_update_queue
+from app.background_process import instrument_subscribe_queue
 import redis
 import os
 from django.db import connection
@@ -29,8 +29,8 @@ def start_socket():
    connection.close()
    def to_lakh(n):
          return float(round(n/100000, 1))
-
-   #r.set("access_token","d7bd21034aa99db4c003689d967d16f89c7c1667")
+   
+   # r.set("access_token","0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05")
    access_token = r.get("access_token").decode("utf-8")
    q = Queue(connection=conn)
    for a, b in it.combinations(list_options, 2):
