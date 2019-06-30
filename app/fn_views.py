@@ -75,6 +75,7 @@ def get_access_token(request):
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
     user_profile = u.get_profile()
+    print("*********access_token********", access_token)
     # Only Admin should have the Rights to start webscoket
     if (user_profile.get('client_id') == client_id):
         r.set("access_token", access_token)
