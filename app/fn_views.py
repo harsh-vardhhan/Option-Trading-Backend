@@ -48,7 +48,7 @@ symbols = ['NIFTY','BANKNIFTY']
 
 # r.flushall()
 
-# r.set("access_token","0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05`")
+r.set("access_token","daeab495d27f567c3e867770b4c6aeb3ad09f978`")
 if (r.get("access_token") != None):
     access_token = r.get("access_token").decode('utf-8')
     u = Upstox (api_key, access_token)
