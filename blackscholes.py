@@ -91,6 +91,7 @@ def create_session():
 
 @sched.scheduled_job('interval', minutes=2)
 def timed_job():
+                print("****Running Black Scholes")
                 
                 #values to be iterated
                 symbol_1 = "NIFTY"
