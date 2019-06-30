@@ -60,7 +60,9 @@ def get_redirect_url(request):
     session = Session(api_key)
     session.set_redirect_uri(redirect_uri)
     session.set_api_secret(secret_key)
-    return Response({"url": session.get_login_url()})
+    url = session.get_login_url()
+    print(url)
+    return Response({"url": url})
 
 
 @api_view(['POST'])
@@ -73,7 +75,6 @@ def get_access_token(request):
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
     user_profile = u.get_profile()
-    print("********Access Token******", access_token)
     # Only Admin should have the Rights to start webscoket
     if (user_profile.get('client_id') == client_id):
         r.set("access_token", access_token)
