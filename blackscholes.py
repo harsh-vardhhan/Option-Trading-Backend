@@ -92,149 +92,151 @@ def create_session():
 @sched.scheduled_job('interval', minutes=2)
 def timed_job():
                 print("****Running Black Scholes")
-                
-                #values to be iterated
-                symbol_1 = "NIFTY"
-                indices_1= "NIFTY_50"
-                
-                symbol_2 = "BANKNIFTY"
-                indices_2= "NIFTY_BANK"
-                
-                nse_index = 'NSE_INDEX'
-                future_date = "19JUL"
-                expiry_date = date(2019, 7, 25)
 
-                symbols = []
-                symbol_indices_2 = (symbol_2, indices_2)
-                symbol_indices_1 = (symbol_1, indices_1)
-                symbols.append(symbol_indices_1)
-                symbols.append(symbol_indices_2)
-
-                for symbol in symbols:
-                        today = date.today()
-                        days_to_expiry = expiry_date - today
-                        r.set("days_to_expiry", days_to_expiry.days)
-                        time_to_maturity = (days_to_expiry.days)/365
+                if is_time_between(time(9,15),time(15,30)):
+                
+                        #values to be iterated
+                        symbol_1 = "NIFTY"
+                        indices_1= "NIFTY_50"
                         
-                        upstox = create_session()
-                        upstox.get_master_contract(master_contract_FO)
-                        future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-                                master_contract_FO, symbol[0]+future_date+'FUT'),
-                                LiveFeedType.Full)
-                        future_data = json.loads(json.dumps(future))
-                        future_price = future_data["ltp"]
-                        r.set(symbol[0]+"future_price", future_price)
+                        symbol_2 = "BANKNIFTY"
+                        indices_2= "NIFTY_BANK"
+                        
+                        nse_index = 'NSE_INDEX'
+                        future_date = "19JUL"
+                        expiry_date = date(2019, 7, 25)
 
-                        upstox.get_master_contract(nse_index)
-                        equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-                                nse_index, symbol[1]),
-                                LiveFeedType.Full)
-                        equity_data = json.loads(json.dumps(equity))
-                        equity_price = equity_data["ltp"]
-                        equity_symbol = equity_data["symbol"]
-                        r.set(symbol[0]+"stock_symbol", equity_symbol)
-                        r.set(symbol[0]+"stock_price", equity_price)
+                        symbols = []
+                        symbol_indices_2 = (symbol_2, indices_2)
+                        symbol_indices_1 = (symbol_1, indices_1)
+                        symbols.append(symbol_indices_1)
+                        symbols.append(symbol_indices_2)
 
-                        call_OI = 0.0
-                        put_OI = 0.0
-                        biggest_OI = 0.0
-                        iv = 0
-                        def to_lakh(n):
-                                return float(round(n/100000, 1))
-                        closest_strike = 10000000
-                        closest_option = ""
-                
-                        for key in r.scan_iter((symbol[0]).lower()+"*"):
-                                #print(key)
-                                instrument_symbol = key.decode('utf-8')
-                                instrument = json.loads(r.get(key).decode('utf-8'))
-
-
-                                if(to_lakh(instrument.get("oi")) > 0.0):
-                                        instrument_symbol = (key).decode("utf-8")
-
-                                        if r.get("s_"+instrument_symbol) != None:    
-
-                                                
-                                                print(instrument_symbol)                          
-                                                strike_price = float(r.get("s_"+instrument_symbol).decode('utf-8'))
-                                                diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
-
-                                                if(diff < closest_strike):
-                                                        closest_strike = diff
-                                                        closest_option = strike_price
-
-                                                if(to_lakh(instrument.get("oi")) > biggest_OI):
-                                                        biggest_OI = to_lakh(instrument.get("oi"))
-
-                                                if (instrument_symbol[-2:] == "ce"):
-                                                        call_OI = call_OI + to_lakh(instrument["oi"])
-                                                        if (strike_price > equity_price):
-                                                                iv = cal_iv(
-                                                                        future_price,
-                                                                        strike_price,
-                                                                        time_to_maturity,
-                                                                        instrument["ltp"], 
-                                                                        0.1, 
-                                                                        0.25,
-                                                                        0.0001, 
-                                                                        "call"
-                                                                        )
-                                                                r.set("iv_"+instrument_symbol, iv)
+                        for symbol in symbols:
+                                today = date.today()
+                                days_to_expiry = expiry_date - today
+                                r.set("days_to_expiry", days_to_expiry.days)
+                                time_to_maturity = (days_to_expiry.days)/365
                                 
-                                                elif(instrument_symbol[-2:] =="pe"):
-                                                        put_OI = put_OI + to_lakh(instrument["oi"])
-                                                        if (strike_price < equity_price):
-                                                                iv = cal_iv(
-                                                                        future_price,
-                                                                        strike_price,
-                                                                        time_to_maturity,
-                                                                        instrument["ltp"], 
-                                                                        0.1, 
-                                                                        0.25,
-                                                                        0.0001, 
-                                                                        "call"
-                                                                        )
-                                                                r.set("iv_"+instrument_symbol, iv)
+                                upstox = create_session()
+                                upstox.get_master_contract(master_contract_FO)
+                                future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+                                        master_contract_FO, symbol[0]+future_date+'FUT'),
+                                        LiveFeedType.Full)
+                                future_data = json.loads(json.dumps(future))
+                                future_price = future_data["ltp"]
+                                r.set(symbol[0]+"future_price", future_price)
 
-                                                if iv == 0:
-                                                        iv = 10.0
+                                upstox.get_master_contract(nse_index)
+                                equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
+                                        nse_index, symbol[1]),
+                                        LiveFeedType.Full)
+                                equity_data = json.loads(json.dumps(equity))
+                                equity_price = equity_data["ltp"]
+                                equity_symbol = equity_data["symbol"]
+                                r.set(symbol[0]+"stock_symbol", equity_symbol)
+                                r.set(symbol[0]+"stock_price", equity_price)
 
-                                                Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
-                                                        future_price,
-                                                        strike_price,
-                                                        time_to_maturity,
-                                                        0.1,
-                                                        iv
-                                                        )
-                                                Delta_put, Theta_put = Greeks_put( 
-                                                        future_price,
-                                                        strike_price,
-                                                        time_to_maturity,
-                                                        0.1,
-                                                        iv
-                                                        )
-                                                Gamma_val = round(Gamma, 3)
-                                                Vega_val = round(Vega, 2)
-                                                Delta_call_val = round(Delta_call, 2) 
-                                                Theta_call_val = round(Theta_call, 2) 
-                                                Delta_put_val = round(Delta_put, 2)
-                                                Theta_put_val = round(Theta_put, 2) 
-                                                r.set("g_"+instrument_symbol[:-2],Gamma_val)
-                                                r.set("v_"+instrument_symbol[:-2],Vega_val)
-                                                r.set("dc_"+instrument_symbol[:-2],Delta_call_val)
-                                                r.set("tc_"+instrument_symbol[:-2],Theta_call_val)
-                                                r.set("dp_"+instrument_symbol[:-2],Delta_put_val)
-                                                r.set("tp_"+instrument_symbol[:-2],Theta_put_val)
-                                        
-                                        
+                                call_OI = 0.0
+                                put_OI = 0.0
+                                biggest_OI = 0.0
+                                iv = 0
+                                def to_lakh(n):
+                                        return float(round(n/100000, 1))
+                                closest_strike = 10000000
+                                closest_option = ""
                         
-                        if call_OI == 0.0:
-                                call_OI = 1.0
-                        pcr = round(put_OI/call_OI, 2)
-                        r.set(symbol[0]+"biggest_OI",biggest_OI)
-                        r.set(symbol[0]+future_date+"closest_strike",closest_option)
-                        r.set(symbol[0]+future_date+"PCR",pcr)
+                                for key in r.scan_iter((symbol[0]).lower()+"*"):
+                                        #print(key)
+                                        instrument_symbol = key.decode('utf-8')
+                                        instrument = json.loads(r.get(key).decode('utf-8'))
+
+
+                                        if(to_lakh(instrument.get("oi")) > 0.0):
+                                                instrument_symbol = (key).decode("utf-8")
+
+                                                if r.get("s_"+instrument_symbol) != None:    
+
+                                                        
+                                                        print(instrument_symbol)                          
+                                                        strike_price = float(r.get("s_"+instrument_symbol).decode('utf-8'))
+                                                        diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
+
+                                                        if(diff < closest_strike):
+                                                                closest_strike = diff
+                                                                closest_option = strike_price
+
+                                                        if(to_lakh(instrument.get("oi")) > biggest_OI):
+                                                                biggest_OI = to_lakh(instrument.get("oi"))
+
+                                                        if (instrument_symbol[-2:] == "ce"):
+                                                                call_OI = call_OI + to_lakh(instrument["oi"])
+                                                                if (strike_price > equity_price):
+                                                                        iv = cal_iv(
+                                                                                future_price,
+                                                                                strike_price,
+                                                                                time_to_maturity,
+                                                                                instrument["ltp"], 
+                                                                                0.1, 
+                                                                                0.25,
+                                                                                0.0001, 
+                                                                                "call"
+                                                                                )
+                                                                        r.set("iv_"+instrument_symbol, iv)
+                                        
+                                                        elif(instrument_symbol[-2:] =="pe"):
+                                                                put_OI = put_OI + to_lakh(instrument["oi"])
+                                                                if (strike_price < equity_price):
+                                                                        iv = cal_iv(
+                                                                                future_price,
+                                                                                strike_price,
+                                                                                time_to_maturity,
+                                                                                instrument["ltp"], 
+                                                                                0.1, 
+                                                                                0.25,
+                                                                                0.0001, 
+                                                                                "call"
+                                                                                )
+                                                                        r.set("iv_"+instrument_symbol, iv)
+
+                                                        if iv == 0:
+                                                                iv = 10.0
+
+                                                        Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
+                                                                future_price,
+                                                                strike_price,
+                                                                time_to_maturity,
+                                                                0.1,
+                                                                iv
+                                                                )
+                                                        Delta_put, Theta_put = Greeks_put( 
+                                                                future_price,
+                                                                strike_price,
+                                                                time_to_maturity,
+                                                                0.1,
+                                                                iv
+                                                                )
+                                                        Gamma_val = round(Gamma, 3)
+                                                        Vega_val = round(Vega, 2)
+                                                        Delta_call_val = round(Delta_call, 2) 
+                                                        Theta_call_val = round(Theta_call, 2) 
+                                                        Delta_put_val = round(Delta_put, 2)
+                                                        Theta_put_val = round(Theta_put, 2) 
+                                                        r.set("g_"+instrument_symbol[:-2],Gamma_val)
+                                                        r.set("v_"+instrument_symbol[:-2],Vega_val)
+                                                        r.set("dc_"+instrument_symbol[:-2],Delta_call_val)
+                                                        r.set("tc_"+instrument_symbol[:-2],Theta_call_val)
+                                                        r.set("dp_"+instrument_symbol[:-2],Delta_put_val)
+                                                        r.set("tp_"+instrument_symbol[:-2],Theta_put_val)
+                                                
+                                                
+                                
+                                if call_OI == 0.0:
+                                        call_OI = 1.0
+                                pcr = round(put_OI/call_OI, 2)
+                                r.set(symbol[0]+"biggest_OI",biggest_OI)
+                                r.set(symbol[0]+future_date+"closest_strike",closest_option)
+                                r.set(symbol[0]+future_date+"PCR",pcr)
 
 sched.start()
 # timed_job()
