@@ -46,7 +46,7 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
-r.flushall()
+# r.flushall()
 
 # r.set("access_token","0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05`")
 if (r.get("access_token") != None):
