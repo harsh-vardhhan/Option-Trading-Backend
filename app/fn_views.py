@@ -48,7 +48,7 @@ symbols = ['NIFTY','BANKNIFTY']
 
 # r.flushall()
 
-r.set("access_token","daeab495d27f567c3e867770b4c6aeb3ad09f978")
+# r.set("access_token","daeab495d27f567c3e867770b4c6aeb3ad09f978")
 if (r.get("access_token") != None):
     access_token = r.get("access_token").decode('utf-8')
     u = Upstox (api_key, access_token)
@@ -76,7 +76,6 @@ def get_access_token(request):
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
     user_profile = u.get_profile()
-    print("*********access_token********", access_token)
     # Only Admin should have the Rights to start webscoket
     if (user_profile.get('client_id') == client_id):
         r.set("access_token", access_token)
@@ -462,5 +461,6 @@ def get_full_quotes(request):
         "days_to_expiry": r.get("days_to_expiry"),
         "expiry_dates": toJson(dates),
         "expiry_date": expiry_date,
-        "pcr": r.get(symbol+expiry_date+"PCR")
+        "pcr": r.get(symbol+expiry_date+"PCR"),
+        "biggest_OI": float(r.get(symbol+"biggest_OI"))
     })

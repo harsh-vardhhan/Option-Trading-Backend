@@ -137,6 +137,7 @@ def timed_job():
 
                         call_OI = 0.0
                         put_OI = 0.0
+                        biggest_OI = 0.0
                         iv = 0
                         def to_lakh(n):
                                 return float(round(n/100000, 1))
@@ -162,6 +163,9 @@ def timed_job():
                                                 if(diff < closest_strike):
                                                         closest_strike = diff
                                                         closest_option = strike_price
+
+                                                if(to_lakh(instrument.get("oi")) > biggest_OI):
+                                                        biggest_OI = to_lakh(instrument.get("oi"))
 
                                                 if (instrument_symbol[-2:] == "ce"):
                                                         call_OI = call_OI + to_lakh(instrument["oi"])
@@ -228,6 +232,7 @@ def timed_job():
                         if call_OI == 0.0:
                                 call_OI = 1.0
                         pcr = round(put_OI/call_OI, 2)
+                        r.set(symbol[0]+"biggest_OI",biggest_OI)
                         r.set(symbol[0]+future_date+"closest_strike",closest_option)
                         r.set(symbol[0]+future_date+"PCR",pcr)
 
