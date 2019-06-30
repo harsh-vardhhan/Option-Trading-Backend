@@ -47,7 +47,7 @@ niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
 
-# r.set("access_token","0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05")
+# r.set("access_token","0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05`")
 if (r.get("access_token") != None):
     access_token = r.get("access_token").decode('utf-8')
     u = Upstox (api_key, access_token)
