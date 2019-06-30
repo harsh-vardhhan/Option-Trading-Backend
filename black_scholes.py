@@ -89,7 +89,7 @@ def create_session():
 
 
 
-@sched.scheduled_job('interval', minutes=1)
+#@sched.scheduled_job('interval', minutes=1)
 def timed_job():
                 
                 #values to be iterated
@@ -230,5 +230,5 @@ def timed_job():
                         r.set(symbol[0]+future_date+"closest_strike",closest_option)
                         r.set(symbol[0]+future_date+"PCR",pcr)
 
-sched.start()
+#sched.start()
 # timed_job()
