@@ -44,12 +44,6 @@ def start_socket():
                               a.exchange, 
                               a.symbol, 
                               b.symbol)
-            else: 
-               q.enqueue(instrument_subscribe_queue, 
-                           access_token,
-                           a.exchange, 
-                           a.symbol, 
-                           b.symbol)
    
    u = Upstox(api_key, r.get("access_token").decode("utf-8"))    
    u.get_master_contract('NSE_FO')
