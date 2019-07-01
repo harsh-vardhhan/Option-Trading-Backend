@@ -31,7 +31,7 @@ from datetime import datetime, time
 def is_time_between(begin_time, end_time, check_time=None):
     # If check time is not given, default to current UTC time
     tz = pytz.timezone('Asia/Kolkata')
-    check_time = check_time or datetime.now().time()
+    check_time = check_time or datetime.now(tz).time()
     if begin_time < end_time:
         return check_time >= begin_time and check_time <= end_time
     else: # crosses midnight
