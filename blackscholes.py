@@ -89,7 +89,7 @@ def create_session():
 
 
 
-@sched.scheduled_job('interval', minutes=2)
+@sched.scheduled_job('interval', seconds=10)
 def timed_job():
                 print("****Running Black Scholes")
 
