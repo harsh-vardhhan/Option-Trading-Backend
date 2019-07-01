@@ -47,14 +47,16 @@ niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
 # r.flushall()
+if (r.get("access_token") != None):
+    try:
+        u = Upstox(api_key, r.get("access_token").decode('utf-8'))
+        user_profile = u.get_profile()
+        if (user_profile.get('client_id') == client_id):
+            start_socket()
+    except:
+        print("**TOKEN INVALID**")
 
 # r.set("access_token","daeab495d27f567c3e867770b4c6aeb3ad09f978")
-if (r.get("access_token") != None):
-    access_token = r.get("access_token").decode('utf-8')
-    u = Upstox (api_key, access_token)
-    user_profile = u.get_profile()
-    if (user_profile.get('client_id') == client_id):
-        start_socket()
 
 @api_view()
 def get_redirect_url(request):
