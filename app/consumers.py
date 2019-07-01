@@ -37,6 +37,7 @@ def start_socket():
       if (a.strike_price == b.strike_price):
          if to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0:          
             subscribed_key = 'sub_'+a.symbol
+            print(r.get(subscribed_key))
             if(r.get(subscribed_key) != None):
                print(r.get(subscribed_key).decode("utf-8"), access_token)
                if (r.get(subscribed_key).decode("utf-8") != access_token):
