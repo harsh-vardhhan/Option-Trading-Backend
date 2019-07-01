@@ -36,7 +36,7 @@ tp_  : Theta Put of option
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url) 
 
-POOL = redis.ConnectionPool(host= host, port=6379, db=0)
+POOL = redis.ConnectionPool(host= "redis://localhost", port=6379, db=0)
 r = redis.StrictRedis(connection_pool=POOL)
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
