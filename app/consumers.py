@@ -54,6 +54,7 @@ def start_socket():
    def quote_update(message):
       messageData = json.loads(json.dumps(message))
       symbol = (messageData['symbol'])
+      print(symbol.lower(), json.dumps(message).encode("utf-8"))
       r.set(symbol.lower(), json.dumps(message).encode("utf-8"))
 
    def websocket_stopped(message):
