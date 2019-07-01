@@ -156,9 +156,7 @@ def timed_job():
                                                 instrument_symbol = (key).decode("utf-8")
 
                                                 if r.get("s_"+instrument_symbol) != None:    
-
-                                                        
-                                                        print(instrument_symbol)                          
+                          
                                                         strike_price = float(r.get("s_"+instrument_symbol).decode('utf-8'))
                                                         diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
 

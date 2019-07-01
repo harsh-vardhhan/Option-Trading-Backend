@@ -396,7 +396,6 @@ def get_full_quotes(request):
         return upstox
     def pairing():
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
-        print(list_options)
         option_pairs = []
         iv = 0.0,
         delta_call = 0
@@ -411,7 +410,6 @@ def get_full_quotes(request):
                     # arrange option pair always in CE and PE order
                     
                     trimmed_symbol = (a.symbol.lower())[:-2]
-                    print(r.get("g_"+trimmed_symbol))
                     if r.get("g_"+trimmed_symbol) != None:
 
 
