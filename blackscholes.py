@@ -92,7 +92,7 @@ def create_session():
 @sched.scheduled_job('interval', seconds=10)
 def timed_job():
                 print("****Running Black Scholes")
-
+                print(is_time_between(time(9,15),time(15,30)))
                 if is_time_between(time(9,15),time(15,30)):
                 
                         #values to be iterated
