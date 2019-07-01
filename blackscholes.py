@@ -94,7 +94,7 @@ def timed_job():
                 print("****Running Black Scholes")
                 print(is_time_between(time(9,15),time(15,30)))
                 if is_time_between(time(9,15),time(15,30)):
-                
+                        upstox = create_session()
                         #values to be iterated
                         symbol_1 = "NIFTY"
                         indices_1= "NIFTY_50"
@@ -118,7 +118,7 @@ def timed_job():
                                 r.set("days_to_expiry", days_to_expiry.days)
                                 time_to_maturity = (days_to_expiry.days)/365
                                 
-                                upstox = create_session()
+                                
                                 upstox.get_master_contract(master_contract_FO)
                                 future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
                                         master_contract_FO, symbol[0]+future_date+'FUT'),
