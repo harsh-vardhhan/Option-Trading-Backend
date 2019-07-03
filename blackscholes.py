@@ -194,7 +194,7 @@ def timed_job():
                                                                                 0.1, 
                                                                                 0.25,
                                                                                 0.0001, 
-                                                                                "call"
+                                                                                "put"
                                                                                 )
                                                                         r.set("iv_"+instrument_symbol, iv)
 
