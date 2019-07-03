@@ -181,6 +181,10 @@ def timed_job():
                                                                                 0.0001, 
                                                                                 "call"
                                                                                 )
+                                                                        if iv == 0:
+                                                                                iv = 10
+                                                                        elif iv < 0:
+                                                                                iv = abs(iv)
                                                                         r.set("iv_"+instrument_symbol, iv)
                                         
                                                         elif(instrument_symbol[-2:] =="pe"):
@@ -196,12 +200,11 @@ def timed_job():
                                                                                 0.0001, 
                                                                                 "put"
                                                                                 )
+                                                                        if iv == 0:
+                                                                                iv = 10
+                                                                        elif iv < 0:
+                                                                                iv = abs(iv)
                                                                         r.set("iv_"+instrument_symbol, iv)
-
-                                                        if iv == 0:
-                                                                iv = 10.0
-                                                        elif iv < 0:
-                                                                iv = abs(iv)
 
 
                                                         Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
