@@ -200,6 +200,9 @@ def timed_job():
 
                                                         if iv == 0:
                                                                 iv = 10.0
+                                                        elif iv < 0:
+                                                                iv = abs(iv)
+
 
                                                         Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
                                                                 future_price,
