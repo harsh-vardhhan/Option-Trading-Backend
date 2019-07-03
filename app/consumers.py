@@ -48,12 +48,12 @@ def start_socket():
    u = Upstox(api_key, r.get("access_token").decode("utf-8"))    
    u.get_master_contract('NSE_FO')
    u.get_master_contract('NSE_EQ')
-   print(u.get_live_feed(u.get_instrument_by_symbol('NSE_EQ', 'RELIANCE'), LiveFeedType.Full))
+   print(u.subscribe(u.get_instrument_by_symbol('NSE_EQ', 'RELIANCE'), LiveFeedType.Full))
    u.start_websocket(True)
    def quote_update(message):
       # messageData = json.loads(json.dumps(message))
       # symbol = (messageData['symbol'])
-      print(message)
+      print("socket: ",message)
       # r.set(symbol.lower(), json.dumps(message).encode("utf-8"))
 
    def websocket_stopped(message):
