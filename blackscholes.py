@@ -83,14 +83,15 @@ def cal_iv(S, K, T, P, r, sigma=0.25, tolerance=0.0001,type="call"):
                 iv  = round(xnew * 100, 1)
                 return iv
 
-def create_session():
-        upstox = Upstox(api_key, access_token)
-        return upstox
+
 
 
 
 @sched.scheduled_job('interval', seconds=10)
 def timed_job():
+                def create_session():
+                        upstox = Upstox(api_key, r.get("access_token").decode("utf-8"))
+                        return upstox
                 print("****Running Black Scholes")
                 print(is_time_between(time(9,15),time(15,30)))
                 if is_time_between(time(9,15),time(15,30)):
