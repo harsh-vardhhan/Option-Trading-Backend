@@ -382,6 +382,14 @@ def store_dates():
 
 @api_view(['POST'])
 def get_full_quotes(request):
+    if (r.get("access_token") != None):
+        try:
+            u = Upstox(api_key, r.get("access_token").decode('utf-8'))
+            user_profile = u.get_profile()
+            if (user_profile.get('client_id') == client_id):
+                start_socket()
+        except:
+            print("**TOKEN INVALID**")
     def obj_dict(obj):
         return obj.__dict__
     def toJson(func):
