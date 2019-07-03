@@ -30,7 +30,7 @@ def start_socket():
    def to_lakh(n):
          return float(round(n/100000, 1))
    
-   # r.set("access_token","0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05")
+   # r.set("access_token","fcb9dd3693be4ed196c8cd1004d436631169bc60")
    access_token = r.get("access_token").decode("utf-8")
    q = Queue(connection=conn)
    for a, b in it.combinations(list_options, 2):

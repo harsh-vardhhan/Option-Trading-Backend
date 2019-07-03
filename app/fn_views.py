@@ -48,6 +48,7 @@ niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
 # r.flushall()
+'''
 if (r.get("access_token") != None):
     try:
         u = Upstox(api_key, r.get("access_token").decode('utf-8'))
@@ -56,8 +57,9 @@ if (r.get("access_token") != None):
             start_socket()
     except:
         print("**TOKEN INVALID**")
+'''
 
-# r.set("access_token","daeab495d27f567c3e867770b4c6aeb3ad09f978")
+# r.set("access_token","fcb9dd3693be4ed196c8cd1004d436631169bc60")
 
 @api_view()
 def get_redirect_url(request):
@@ -380,21 +382,13 @@ def store_dates():
 
 @api_view(['POST'])
 def get_full_quotes(request):
-    if (r.get("access_token") != None):
-        try:
-            u = Upstox(api_key, r.get("access_token").decode('utf-8'))
-            user_profile = u.get_profile()
-            if (user_profile.get('client_id') == client_id):
-                start_socket()
-        except:
-            print("**TOKEN INVALID**")
     def obj_dict(obj):
         return obj.__dict__
     def toJson(func):
         return json.loads(json.dumps(func, default=obj_dict))
     store_dates()
     request_data = json.loads(json.dumps(request.data))
-    access_token = request_data['accessToken']
+    # access_token = request_data['accessToken']
     indices = request_data['indices']
     symbol = request_data['symbol']
     expiry_date = request_data['expiry_date']
@@ -402,9 +396,11 @@ def get_full_quotes(request):
         expiry_date = "19JUL"
     dates = list(Expiry_Date.objects.all())
     connection.close()
+    '''
     def create_session(request):
         upstox = Upstox(api_key, access_token)
         return upstox
+    '''
     def pairing():
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
         option_pairs = []
