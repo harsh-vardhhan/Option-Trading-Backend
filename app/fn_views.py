@@ -49,16 +49,9 @@ symbols = ['NIFTY','BANKNIFTY']
 
 start_socket()
 # r.flushall()
-'''
-if (r.get("access_token") != None):
-    try:
-        u = Upstox(api_key, r.get("access_token").decode('utf-8'))
-        user_profile = u.get_profile()
-        if (user_profile.get('client_id') == client_id):
-            start_socket()
-    except:
-        print("**TOKEN INVALID**")
-'''
+
+
+
 # r.set("access_token","fda9f3d992b33701ae23d7b539d799391ffd14fe")
 
 
@@ -82,10 +75,14 @@ def get_access_token(request):
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
-    user_profile = u.get_profile()
-    # Only Admin should have the Rights to start webscoket
-    if (user_profile.get('client_id') == client_id):
-        r.set("access_token", access_token)
+    try:
+        u = Upstox(api_key, access_token)
+        user_profile = u.get_profile()
+        if (user_profile.get('client_id') == client_id):
+            r.set("access_token", access_token)
+            start_socket()
+    except:
+        print("**TOKEN INVALID**")
     return Response({"accessToken": access_token})
  
 # change the enitre function into a one time event saved to PostgreSQL
