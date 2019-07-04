@@ -38,7 +38,6 @@ def is_time_between(begin_time, end_time, check_time=None):
         return check_time >= begin_time or check_time <= end_time
 
 
-
 def Greeks_call (S, X, T, r, sigma):
     d1 = (math.log (S/X) + (r + (sigma * sigma) / 2) * T) / (sigma * math.sqrt(T))
     d2 = d1 - sigma * math.sqrt (T)
@@ -93,7 +92,6 @@ def timed_job():
                         upstox = Upstox(api_key, r.get("access_token").decode("utf-8"))
                         return upstox
                 print("****Running Black Scholes")
-                print(is_time_between(time(9,15),time(15,30)))
                 if is_time_between(time(9,15),time(15,30)):
                         upstox = create_session()
                         #values to be iterated
@@ -126,7 +124,7 @@ def timed_job():
                                         LiveFeedType.Full)
                                 future_data = json.loads(json.dumps(future))
                                 future_price = future_data["ltp"]
-                                r.set(symbol[0]+"future_price", future_price)
+                                r.set("future_price"+symbol[0], future_price)
 
                                 upstox.get_master_contract(nse_index)
                                 equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
@@ -135,8 +133,8 @@ def timed_job():
                                 equity_data = json.loads(json.dumps(equity))
                                 equity_price = equity_data["ltp"]
                                 equity_symbol = equity_data["symbol"]
-                                r.set(symbol[0]+"stock_symbol", equity_symbol)
-                                r.set(symbol[0]+"stock_price", equity_price)
+                                r.set("stock_symbol"+symbol[0], equity_symbol)
+                                r.set("stock_price"+symbol[0], equity_price)
 
                                 call_OI = 0.0
                                 put_OI = 0.0
@@ -159,7 +157,7 @@ def timed_job():
                                                 if r.get("s_"+instrument_symbol) != None:    
                           
                                                         strike_price = float(r.get("s_"+instrument_symbol).decode('utf-8'))
-                                                        diff = abs(float(r.get(symbol[0]+"stock_price")) - strike_price)
+                                                        diff = abs(float(r.get("stock_price"+symbol[0])) - strike_price)
 
                                                         if(diff < closest_strike):
                                                                 closest_strike = diff
@@ -236,9 +234,9 @@ def timed_job():
                                 if call_OI == 0.0:
                                         call_OI = 1.0
                                 pcr = round(put_OI/call_OI, 2)
-                                r.set(symbol[0]+"biggest_OI",biggest_OI)
-                                r.set(symbol[0]+future_date+"closest_strike",closest_option)
-                                r.set(symbol[0]+future_date+"PCR",pcr)
+                                r.set("biggest_OI" + symbol[0],biggest_OI)
+                                r.set("closest_strike" + symbol[0]+future_date,closest_option)
+                                r.set("PCR"+symbol[0] + future_date,pcr)
 
 sched.start()
 # timed_job()

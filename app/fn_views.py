@@ -47,13 +47,17 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY','BANKNIFTY']
 
-start_socket()
+
 # r.flushall()
 
 
 
-# r.set("access_token","fda9f3d992b33701ae23d7b539d799391ffd14fe")
+# r.set("access_token","958ea22b76ce8e647dca95a01514c4ce9441e1ef")
 
+@api_view()
+def get_feed(request):
+    start_socket()
+    return Response({"Update": "Started"})
 
 
 @api_view()
@@ -84,6 +88,7 @@ def get_access_token(request):
     except:
         print("**TOKEN INVALID**")
     return Response({"accessToken": access_token})
+
  
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
@@ -455,16 +460,16 @@ def get_full_quotes(request):
         elif ("BANKNIFTY"):
             return 20
     return Response({
-        "stock_price": r.get(symbol+"stock_price"),
-        "stock_symbol": r.get(symbol+"stock_symbol"),
+        "stock_price": r.get("stock_price"+symbol),
+        "stock_symbol": r.get("stock_symbol"+symbol),
         "options": toJson(option_pairs),
         "symbol": symbol,
-        "closest_strike" : float(r.get(symbol+expiry_date+"closest_strike").decode("utf-8")),
-        "future": r.get(symbol+"future_price"),
+        "closest_strike" : float(r.get("closest_strike"+symbol+expiry_date).decode("utf-8")),
+        "future": r.get("future_price"+symbol),
         "lot_size": toJson(lot_size(symbol)),
         "days_to_expiry": r.get("days_to_expiry"),
         "expiry_dates": toJson(dates),
         "expiry_date": expiry_date,
-        "pcr": r.get(symbol+expiry_date+"PCR"),
-        "biggest_OI": float(r.get(symbol+"biggest_OI"))
+        "pcr": r.get("PCR"+symbol+expiry_date),
+        "biggest_OI": float(r.get("biggest_OI"+symbol))
     })

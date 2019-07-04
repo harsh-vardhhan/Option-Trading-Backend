@@ -10,7 +10,7 @@ import itertools as it
 from django.core.cache import cache
 from rq import Queue
 from worker import conn
-from app.background_process import instrument_subscribe_queue
+from app.background_process import instrument_subscribe_queue, live_feed_queue
 import redis
 import os
 from django.db import connection
@@ -23,6 +23,7 @@ api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 
 
 def start_socket():
+   '''
    list_options = Full_Quote.objects\
                             .all()\
                             .order_by('strike_price')
@@ -30,7 +31,7 @@ def start_socket():
    def to_lakh(n):
          return float(round(n/100000, 1))
    
-   # r.set("access_token","fcb9dd3693be4ed196c8cd1004d436631169bc60")
+   r.set("access_token","958ea22b76ce8e647dca95a01514c4ce9441e1ef")
    access_token = r.get("access_token").decode("utf-8")
    q = Queue(connection=conn)
    for a, b in it.combinations(list_options, 2):
@@ -45,21 +46,24 @@ def start_socket():
                               a.symbol, 
                               b.symbol)
    
-   u = Upstox(api_key, r.get("access_token").decode("utf-8"))    
+   u = Upstox(api_key, r.get("access_token").decode("utf-8"))  
+
    u.get_master_contract('NSE_FO')
    u.get_master_contract('NSE_EQ')
-   print(u.subscribe(u.get_instrument_by_symbol('NSE_EQ', 'RELIANCE'), LiveFeedType.Full))
+   u.subscribe(u.get_instrument_by_symbol('NSE_EQ', 'RELIANCE'), LiveFeedType.LTP)
    u.start_websocket(True)
-   def quote_update(message):
-      # messageData = json.loads(json.dumps(message))
-      # symbol = (messageData['symbol'])
-      print("socket: ",message)
-      # r.set(symbol.lower(), json.dumps(message).encode("utf-8"))
+   '''
 
-   def websocket_stopped(message):
-      u.start_websocket(True)
+   symbols = ['nifty', 'banknifty']
+   start_time = time.time()
 
-   u.set_on_quote_update(quote_update)
-   u.set_on_disconnect (websocket_stopped)
+   q = Queue(connection=conn)
+   for symbol in symbols:
+      for key in r.scan_iter(symbol+"*"):
+         access_token = r.get("access_token").decode("utf-8")
+         instrument = key.decode('utf-8')
+         q.enqueue(live_feed_queue, access_token,'NSE_FO', instrument)
+   
+
 
 
