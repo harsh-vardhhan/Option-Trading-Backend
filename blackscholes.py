@@ -29,6 +29,8 @@ access_token = r.get("access_token").decode("utf-8")
 from datetime import datetime, time
 
 def is_time_between(begin_time, end_time, check_time=None):
+    return True
+    '''
     # If check time is not given, default to current UTC time
     tz = pytz.timezone('Asia/Kolkata')
     check_time = check_time or datetime.now(tz).time()
@@ -36,6 +38,7 @@ def is_time_between(begin_time, end_time, check_time=None):
         return check_time >= begin_time and check_time <= end_time
     else: # crosses midnight
         return check_time >= begin_time or check_time <= end_time
+    '''
 
 
 def Greeks_call (S, X, T, r, sigma):
