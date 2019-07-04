@@ -38,7 +38,7 @@ r = redis.from_url(redis_url)
 
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
-redirect_uri = 'https://www.explainoid.com/home'
+redirect_uri = 'https://www.trakbit.com/home'
 secret_key = 'pqmnwsq8ja'
 client_id = "245842"
 master_contract_FO = 'NSE_FO'
