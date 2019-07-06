@@ -10,7 +10,7 @@ import itertools as it
 from django.core.cache import cache
 from rq import Queue
 from worker import conn
-from app.background_process import instrument_subscribe_queue, live_feed_queue
+from app.background_process import live_feed_queue
 import redis
 import os
 from django.db import connection
@@ -22,38 +22,7 @@ r = redis.from_url(redis_url)
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 
 
-def start_socket():
-   '''
-   list_options = Full_Quote.objects\
-                            .all()\
-                            .order_by('strike_price')
-   connection.close()
-   def to_lakh(n):
-         return float(round(n/100000, 1))
-   
-   r.set("access_token","958ea22b76ce8e647dca95a01514c4ce9441e1ef")
-   access_token = r.get("access_token").decode("utf-8")
-   q = Queue(connection=conn)
-   for a, b in it.combinations(list_options, 2):
-      if (a.strike_price == b.strike_price):
-         if to_lakh(a.oi) > 0.0 and to_lakh(b.oi) > 0.0:          
-            subscribed_key = 'sub_'+a.symbol
-            if(r.get(subscribed_key) != None):
-               if (r.get(subscribed_key).decode("utf-8") != access_token):
-                  q.enqueue(instrument_subscribe_queue, 
-                              access_token,
-                              a.exchange, 
-                              a.symbol, 
-                              b.symbol)
-   
-   u = Upstox(api_key, r.get("access_token").decode("utf-8"))  
-
-   u.get_master_contract('NSE_FO')
-   u.get_master_contract('NSE_EQ')
-   u.subscribe(u.get_instrument_by_symbol('NSE_EQ', 'RELIANCE'), LiveFeedType.LTP)
-   u.start_websocket(True)
-   '''
-
+def start_subscription():
    symbols = ['nifty', 'banknifty']
    start_time = time.time()
 
@@ -63,6 +32,8 @@ def start_socket():
          access_token = r.get("access_token").decode("utf-8")
          instrument = key.decode('utf-8')
          q.enqueue(live_feed_queue, access_token,'NSE_FO', instrument)
+
+
    
 
 

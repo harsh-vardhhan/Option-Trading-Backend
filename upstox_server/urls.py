@@ -8,7 +8,7 @@ from app.fn_views import (
     save_full_quotes_db, 
     get_full_quotes, 
     validate_token,
-    get_feed
+    subscribe_quotes
 )
 
 router = DefaultRouter()
@@ -21,7 +21,7 @@ urlpatterns = [
     path('savefullquotes/', save_full_quotes_db),
     path('quote/', get_full_quotes),
     path('validatetoken/', validate_token),
-    path('updatefeed/', get_feed)
+    path('subscribequotes/', subscribe_quotes)
 ]
 
 urlpatterns += router.urls

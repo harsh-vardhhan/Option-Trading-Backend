@@ -18,7 +18,7 @@ import requests
 import ast
 import os
 from math import sqrt
-from app.consumers import start_socket
+from app.consumers import start_subscription
 
 ''' 
 s_   : Instrument Options -> To fetch option strikes
@@ -51,12 +51,22 @@ symbols = ['NIFTY','BANKNIFTY']
 # r.flushall()
 
 
+# r.set("access_token","99d1d7d8522123ca2ac3ee6f33e5f6ca52fb1bcf")
 
-# r.set("access_token","958ea22b76ce8e647dca95a01514c4ce9441e1ef")
+# TODO test in with live data
+@api_view()
+def live_feed(request):
+    def event_handler_quote_update(message):
+        print("Quote Update: %s" % str(message))
+    
+    u = Upstox(api_key, r.get("access_token").decode("utf-8"))
+    u.set_on_quote_update(event_handler_quote_update)
+    u.start_websocket(True)
+    return Response({"Socket": "Started"})
 
 @api_view()
-def get_feed(request):
-    start_socket()
+def subscribe_quotes(request):
+    start_subscription()
     return Response({"Update": "Started"})
 
 

@@ -24,24 +24,10 @@ def full_quotes_queue(accessToken, symbol):
     redis_obj.set(symbol, optionData)
 
 
-def instrument_subscribe_queue(access_token, exchange, a_symbol, b_symbol):
-    u = Upstox(api_key, access_token)
-    u.get_master_contract(master_contract_FO)
-    u.subscribe(u.get_instrument_by_symbol(
-        str(exchange),
-        str(a_symbol)), LiveFeedType.Full)
-    redis_obj.set('sub_'+a_symbol, access_token)
-    u.subscribe(u.get_instrument_by_symbol(
-        str(exchange),
-        str(b_symbol)), LiveFeedType.Full)
-
-
 def live_feed_queue(access_token, exchange, instrument):
     u = Upstox(api_key, access_token)
     u.get_master_contract(master_contract_FO)
-    live_instrument =u.get_live_feed(u.get_instrument_by_symbol('NSE_FO', instrument), LiveFeedType.Full)
-    redis_obj.set(instrument, json.dumps(live_instrument))
-    sleep(1)
+    live_instrument = u.subscribe(u.get_instrument_by_symbol('NSE_FO', instrument), LiveFeedType.Full)
     
 
 

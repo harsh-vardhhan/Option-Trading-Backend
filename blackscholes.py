@@ -86,7 +86,7 @@ def cal_iv(S, K, T, P, r, sigma=0.25, tolerance=0.0001,type="call"):
 
 
 
-@sched.scheduled_job('interval', minutes=5)
+@sched.scheduled_job('interval', minutes=60)
 def timed_job():
                 def create_session():
                         upstox = Upstox(api_key, r.get("access_token").decode("utf-8"))
