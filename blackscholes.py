@@ -30,6 +30,7 @@ from datetime import datetime, time
 
 def is_time_between(begin_time, end_time, check_time=None):
     # If check time is not given, default to current UTC time
+    return True
     tz = pytz.timezone('Asia/Kolkata')
     check_time = check_time or datetime.now(tz).time()
     if begin_time < end_time:
@@ -86,7 +87,7 @@ def cal_iv(S, K, T, P, r, sigma=0.25, tolerance=0.0001,type="call"):
 
 
 
-@sched.scheduled_job('interval', minutes=60)
+# @sched.scheduled_job('interval', minutes=60)
 def timed_job():
                 def create_session():
                         upstox = Upstox(api_key, r.get("access_token").decode("utf-8"))
@@ -144,93 +145,158 @@ def timed_job():
                                         return float(round(n/100000, 1))
                                 closest_strike = 10000000
                                 closest_option = ""
-                        
-                                for key in r.scan_iter((symbol[0]).lower()+"*"):
-                                        #print(key)
-                                        instrument_symbol = key.decode('utf-8')
-                                        instrument = json.loads(r.get(key).decode('utf-8'))
+                                lowest_loss = 100000000000000000000000
+                                options_pairs = []
 
-
-                                        if(to_lakh(instrument.get("oi")) > 0.0):
-                                                instrument_symbol = (key).decode("utf-8")
-
-                                                if r.get("s_"+instrument_symbol) != None:    
-                          
-                                                        strike_price = float(r.get("s_"+instrument_symbol).decode('utf-8'))
-                                                        diff = abs(float(r.get("stock_price"+symbol[0])) - strike_price)
-
-                                                        if(diff < closest_strike):
-                                                                closest_strike = diff
-                                                                closest_option = strike_price
-
-                                                        if(to_lakh(instrument.get("oi")) > biggest_OI):
-                                                                biggest_OI = to_lakh(instrument.get("oi"))
-
-                                                        if (instrument_symbol[-2:] == "ce"):
-                                                                call_OI = call_OI + to_lakh(instrument["oi"])
-                                                                if (strike_price > equity_price):
-                                                                        iv = cal_iv(
-                                                                                future_price,
-                                                                                strike_price,
-                                                                                time_to_maturity,
-                                                                                instrument["ltp"], 
-                                                                                0.1, 
-                                                                                0.25,
-                                                                                0.0001, 
-                                                                                "call"
-                                                                                )
- 
-                                                                        r.set("iv_"+instrument_symbol, iv)
-                                        
-                                                        elif(instrument_symbol[-2:] =="pe"):
-                                                                put_OI = put_OI + to_lakh(instrument["oi"])
-                                                                if (strike_price < equity_price):
-                                                                        iv = cal_iv(
-                                                                                future_price,
-                                                                                strike_price,
-                                                                                time_to_maturity,
-                                                                                instrument["ltp"], 
-                                                                                0.1, 
-                                                                                0.25,
-                                                                                0.0001, 
-                                                                                "put"
-                                                                                )
-                                                                        r.set("iv_"+instrument_symbol, iv)
-
-                                                        if iv == 0:
-                                                                iv = 10
-                                                        elif iv < 0:
-                                                                iv = abs(iv)
-
-                                                        Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
-                                                                future_price,
-                                                                strike_price,
-                                                                time_to_maturity,
-                                                                0.1,
-                                                                iv
-                                                                )
-                                                        Delta_put, Theta_put = Greeks_put( 
-                                                                future_price,
-                                                                strike_price,
-                                                                time_to_maturity,
-                                                                0.1,
-                                                                iv
-                                                                )
-                                                        Gamma_val = round(Gamma, 3)
-                                                        Vega_val = round(Vega, 2)
-                                                        Delta_call_val = round(Delta_call, 2) 
-                                                        Theta_call_val = round(Theta_call, 2) 
-                                                        Delta_put_val = round(Delta_put, 2)
-                                                        Theta_put_val = round(Theta_put, 2) 
-                                                        r.set("g_"+instrument_symbol[:-2],Gamma_val)
-                                                        r.set("v_"+instrument_symbol[:-2],Vega_val)
-                                                        r.set("dc_"+instrument_symbol[:-2],Delta_call_val)
-                                                        r.set("tc_"+instrument_symbol[:-2],Theta_call_val)
-                                                        r.set("dp_"+instrument_symbol[:-2],Delta_put_val)
-                                                        r.set("tp_"+instrument_symbol[:-2],Theta_put_val)
-                                                
-                                                
+                                for a, b in it.combinations(r.scan_iter((symbol[0]).lower()+"*"), 2):
+                                        instrument_symbol_a = (a).decode('utf-8')
+                                        instrument_symbol_b = (b).decode('utf-8')
+                                        instrument_a_strike = json.loads(r.get("s_"+instrument_symbol_a))
+                                        instrument_b_strike = json.loads(r.get("s_"+instrument_symbol_b))   
                                 
+                                        if(instrument_a_strike == instrument_b_strike):
+                                                call_option_symbol = ""
+                                                put_option_symbol = ""
+                                                if(instrument_symbol_a[-2:] =="ce"):
+                                                        call_option_symbol = instrument_symbol_a
+                                                        put_option_symbol = instrument_symbol_b
+                                                elif(instrument_symbol_a[-2:] =="pe"):
+                                                        call_option_symbol = instrument_symbol_b
+                                                        put_option_symbol = instrument_symbol_a
+                                                
+                                                # Option Chain CE-PE order from this point
+                                                iv = 0
+                                                loss_value_call = 0
+                                                loss_value_put = 0
+                                                call_option = json.loads(r.get(call_option_symbol))
+                                                put_option = json.loads(r.get(put_option_symbol))
+                                                
+                                                call_OI = call_OI + call_option.get("oi")
+                                                put_OI = put_OI + put_option.get("oi")
+                                                
+                                                diff = abs(float(r.get("stock_price"+symbol[0])) - instrument_a_strike)
+
+                                                if(diff < closest_strike):
+                                                        closest_strike = diff
+                                                        closest_option = instrument_a_strike
+
+                                                if(to_lakh(call_option.get("oi")) > biggest_OI):
+                                                        biggest_OI = to_lakh(call_option.get("oi"))
+                                                
+                                                if(to_lakh(put_option.get("oi")) > biggest_OI):
+                                                        biggest_OI = to_lakh(put_option.get("oi"))
+         
+                                                
+                                                if (instrument_a_strike < equity_price):
+                                                     iv = cal_iv(
+                                                                future_price,
+                                                                instrument_a_strike,
+                                                                time_to_maturity,
+                                                                call_option.get("ltp"), 
+                                                                0.1, 
+                                                                0.25,
+                                                                0.0001, 
+                                                                "call"
+                                                                ) 
+
+                                                if (instrument_a_strike > equity_price):
+                                                     iv = cal_iv(
+                                                                future_price,
+                                                                instrument_a_strike,
+                                                                time_to_maturity,
+                                                                put_option.get("ltp"), 
+                                                                0.1, 
+                                                                0.25,
+                                                                0.0001, 
+                                                                "put"
+                                                                )
+                                                if (iv == 0):
+                                                        iv = 10
+                                                
+                                                Delta_call, Gamma, Vega, Theta_call = Greeks_call( 
+                                                        future_price,
+                                                        instrument_a_strike,
+                                                        time_to_maturity,
+                                                        0.1,
+                                                        iv
+                                                        )
+
+                                                Delta_put, Theta_put = Greeks_put( 
+                                                        future_price,
+                                                        instrument_a_strike,
+                                                        time_to_maturity,
+                                                        0.1,
+                                                        iv
+                                                        )
+                                                Gamma_val = round(Gamma, 3)
+                                                Vega_val = round(Vega, 2)
+                                                Delta_call_val = round(Delta_call, 2) 
+                                                Theta_call_val = round(Theta_call, 2) 
+                                                Delta_put_val = round(Delta_put, 2)
+                                                Theta_put_val = round(Theta_put, 2) 
+                                                r.set("g_"+instrument_symbol_a[:-2],Gamma_val)
+                                                r.set("v_"+instrument_symbol_a[:-2],Vega_val)
+                                                r.set("dc_"+instrument_symbol_a[:-2],Delta_call_val)
+                                                r.set("tc_"+instrument_symbol_a[:-2],Theta_call_val)
+                                                r.set("dp_"+instrument_symbol_a[:-2],Delta_put_val)
+                                                r.set("tp_"+instrument_symbol_a[:-2],Theta_put_val)
+                                                option_pair = (
+                                                        instrument_a_strike,
+                                                        call_option_symbol, 
+                                                        put_option_symbol,
+                                                        call_option.get("oi"),
+                                                        put_option.get("oi"),
+                                                )
+                                                options_pairs.append(option_pair)
+
+                                # Calculate Max Pain
+                                sorted_option_pairs = sorted(options_pairs, key=lambda x: x[0])
+                                max_pain_list = []
+                                strike_difference = 0
+                                for i,a in enumerate(sorted_option_pairs):  
+                                        if i != 0:
+                                                strike_difference = strike_difference + 50
+                                        max_pain_pair = (
+                                                sorted_option_pairs[i][0],
+                                                sorted_option_pairs[i][1],
+                                                sorted_option_pairs[i][2],
+                                                sorted_option_pairs[i][3],
+                                                sorted_option_pairs[i][4],
+                                                strike_difference
+                                        )
+                                        max_pain_list.append(max_pain_pair)
+                                
+                                
+                                cumilative_call_counter = 0
+                                cumilative_put_counter = len(max_pain_list)  
+
+                                total_loss_list = []   
+                                for i, a in enumerate(max_pain_list):
+                                        strike_call_counter = 0
+                                        cumilative_call_counter = i                  
+                                        cumilative_put_counter = i
+                                        cumilative_call = 0       
+                                        cumilative_put = 0    
+                                        
+                                        while cumilative_call_counter > 0:
+                                                print("STRIKE SINGLE")
+                                                strike_call_counter = strike_call_counter + 1
+                                                cumilative_call_counter = cumilative_call_counter - 1
+                                                # TODO debug if different strike (max_pain_list[i][3]) are being changed inside while
+                                                cumilative_val = max_pain_list[i][3] * max_pain_list[strike_call_counter][5]
+                                                cumilative_call = cumilative_call + cumilative_val
+                                        while cumilative_put_counter < (len(max_pain_list)- 1):
+                                                cumilative_put_counter = cumilative_put_counter + 1
+                                                cumilative_val = max_pain_list[cumilative_put_counter][5] * cumilative_put_counter
+                                                cumilative_put = cumilative_put +  cumilative_val
+
+                                        print(max_pain_list[i][0]  , cumilative_call)
+                                        total_loss_pair = (max_pain_list[i][0]  , cumilative_call + cumilative_put)
+                                        total_loss_list.append(total_loss_pair)
+                                print("************************")
+                                print(min(total_loss_list, key=lambda x: x[1]))
+
+
                                 if call_OI == 0.0:
                                         call_OI = 1.0
                                 pcr = round(put_OI/call_OI, 2)
@@ -238,5 +304,5 @@ def timed_job():
                                 r.set("closest_strike" + symbol[0]+future_date,closest_option)
                                 r.set("PCR"+symbol[0] + future_date,pcr)
 
-sched.start()
-# timed_job()
+# sched.start()
+timed_job()

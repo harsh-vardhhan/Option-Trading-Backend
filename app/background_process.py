@@ -28,6 +28,12 @@ def live_feed_queue(access_token, exchange, instrument):
     u = Upstox(api_key, access_token)
     u.get_master_contract(master_contract_FO)
     live_instrument = u.subscribe(u.get_instrument_by_symbol('NSE_FO', instrument), LiveFeedType.Full)
+
+def update_option_queue(access_token, exchange, instrument):
+    u = Upstox(api_key, access_token)
+    u.get_master_contract(master_contract_FO)
+    live_instrument = u.get_live_feed(u.get_instrument_by_symbol('NSE_FO', instrument), LiveFeedType.Full)
+    redis_obj.set(instrument, json.dumps(live_instrument))
     
 
 

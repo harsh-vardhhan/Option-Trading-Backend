@@ -18,7 +18,7 @@ import requests
 import ast
 import os
 from math import sqrt
-from app.consumers import start_subscription
+from app.consumers import start_subscription, start_update_option
 
 ''' 
 s_   : Instrument Options -> To fetch option strikes
@@ -51,7 +51,7 @@ symbols = ['NIFTY','BANKNIFTY']
 # r.flushall()
 
 
-# r.set("access_token","99d1d7d8522123ca2ac3ee6f33e5f6ca52fb1bcf")
+r.set("access_token","ff7ad43ae0a3c82e02e72c13ac3b5795528a2180")
 
 # TODO test in with live data
 @api_view()
@@ -67,6 +67,11 @@ def live_feed(request):
 @api_view()
 def subscribe_quotes(request):
     start_subscription()
+    return Response({"Subcription": "Started"})
+
+@api_view()
+def update_option(request):
+    start_update_option()
     return Response({"Update": "Started"})
 
 

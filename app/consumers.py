@@ -10,7 +10,7 @@ import itertools as it
 from django.core.cache import cache
 from rq import Queue
 from worker import conn
-from app.background_process import live_feed_queue
+from app.background_process import live_feed_queue, update_option_queue
 import redis
 import os
 from django.db import connection
@@ -32,6 +32,17 @@ def start_subscription():
          access_token = r.get("access_token").decode("utf-8")
          instrument = key.decode('utf-8')
          q.enqueue(live_feed_queue, access_token,'NSE_FO', instrument)
+
+def start_update_option():
+   symbols = ['nifty', 'banknifty']
+   start_time = time.time()
+
+   q = Queue(connection=conn)
+   for symbol in symbols:
+      for key in r.scan_iter(symbol+"*"):
+         access_token = r.get("access_token").decode("utf-8")
+         instrument = key.decode('utf-8')
+         q.enqueue(update_option_queue, access_token,'NSE_FO', instrument)
 
 
    
