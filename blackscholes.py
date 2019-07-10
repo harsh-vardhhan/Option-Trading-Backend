@@ -295,7 +295,7 @@ def timed_job():
                                         #print("*******",max_pain_list[i][0] ,max_pain_list[i][4], max_pain_list[i][5])
                                         total_loss_pair = (max_pain_list[i][0] ,total_loss)
                                         total_loss_list.append(total_loss_pair)
-                                print(min(total_loss_list, key=lambda x: x[1]))
+                                r.set("max_pain"+symbol[0],min(total_loss_list, key=lambda x: x[1])[0])
 
 
                                 if call_OI == 0.0:

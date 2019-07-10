@@ -486,5 +486,6 @@ def get_full_quotes(request):
         "expiry_dates": toJson(dates),
         "expiry_date": expiry_date,
         "pcr": r.get("PCR"+symbol+expiry_date),
-        "biggest_OI": float(r.get("biggest_OI"+symbol))
+        "biggest_OI": float(r.get("biggest_OI"+symbol)),
+        "max_pain":  float(r.get("max_pain"+symbol))
     })
