@@ -51,7 +51,7 @@ symbols = ['NIFTY','BANKNIFTY']
 # r.flushall()
 
 
-r.set("access_token","ff7ad43ae0a3c82e02e72c13ac3b5795528a2180")
+# r.set("access_token","84c0153696908e16e3991c3652209037845d2ace")
 
 # TODO test in with live data
 @api_view()

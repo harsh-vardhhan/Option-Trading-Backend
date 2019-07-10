@@ -274,26 +274,27 @@ def timed_job():
                                 for i, a in enumerate(max_pain_list):
                                         strike_call_counter = 0
                                         cumilative_call_counter = i                  
-                                        cumilative_put_counter = i
                                         cumilative_call = 0       
-                                        cumilative_put = 0    
                                         
+                                        cumilative_put_counter = i
+                                        cumilative_put = 0    
+                                        strike_put_counter = 0
                                         while cumilative_call_counter > 0:
-                                                print("STRIKE SINGLE")
-                                                strike_call_counter = strike_call_counter + 1
                                                 cumilative_call_counter = cumilative_call_counter - 1
-                                                # TODO debug if different strike (max_pain_list[i][3]) are being changed inside while
-                                                cumilative_val = max_pain_list[i][3] * max_pain_list[strike_call_counter][5]
+                                                #print(max_pain_list[i][0] ,max_pain_list[cumilative_call_counter][3], max_pain_list[strike_call_counter][5])
+                                                cumilative_val = max_pain_list[cumilative_call_counter][3] * max_pain_list[strike_call_counter][5]
                                                 cumilative_call = cumilative_call + cumilative_val
-                                        while cumilative_put_counter < (len(max_pain_list)- 1):
+                                                strike_call_counter = strike_call_counter + 1
+                                        while cumilative_put_counter < (len(max_pain_list)- 1):       
                                                 cumilative_put_counter = cumilative_put_counter + 1
-                                                cumilative_val = max_pain_list[cumilative_put_counter][5] * cumilative_put_counter
+                                                cumilative_val = max_pain_list[cumilative_put_counter][4] * max_pain_list[strike_put_counter][5]
+                                                strike_put_counter = strike_put_counter + 1
                                                 cumilative_put = cumilative_put +  cumilative_val
 
-                                        print(max_pain_list[i][0]  , cumilative_call)
-                                        total_loss_pair = (max_pain_list[i][0]  , cumilative_call + cumilative_put)
+                                        total_loss = cumilative_call + cumilative_put
+                                        #print("*******",max_pain_list[i][0] ,max_pain_list[i][4], max_pain_list[i][5])
+                                        total_loss_pair = (max_pain_list[i][0] ,total_loss)
                                         total_loss_list.append(total_loss_pair)
-                                print("************************")
                                 print(min(total_loss_list, key=lambda x: x[1]))
 
 
