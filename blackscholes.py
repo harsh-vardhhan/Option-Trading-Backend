@@ -278,7 +278,7 @@ def timed_job():
                                         
                                         cumilative_put_counter = i
                                         cumilative_put = 0    
-                                        strike_put_counter = 0
+                                        strike_put_counter = 1 # This ensures a liquid strike is the max pain
                                         while cumilative_call_counter > 0:
                                                 cumilative_call_counter = cumilative_call_counter - 1
                                                 #print(max_pain_list[i][0] ,max_pain_list[cumilative_call_counter][3], max_pain_list[strike_call_counter][5])
