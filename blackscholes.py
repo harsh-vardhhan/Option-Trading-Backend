@@ -23,7 +23,7 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 
 # NOTE token r.set only in DEV mode
-# r.set("access_token", "0ed0271819b5be3bc2c3b762bdec2f93fc5bbc05")
+#r.set("access_token", "5c3acdff7d888a48de122a8b0b9e85307ac0d7ff")
 access_token = r.get("access_token").decode("utf-8")
 
 from datetime import datetime, time
@@ -87,9 +87,11 @@ def cal_iv(S, K, T, P, r, sigma=0.25, tolerance=0.0001,type="call"):
 
 
 
-@sched.scheduled_job('interval', minutes=30)
+@sched.scheduled_job('interval', minutes=2)
 def timed_job():
+                r.set("access_token", "5c3acdff7d888a48de122a8b0b9e85307ac0d7ff")
                 def create_session():
+                        print(r.get("access_token").decode("utf-8"))
                         upstox = Upstox(api_key, r.get("access_token").decode("utf-8"))
                         return upstox
                 print("****Running Black Scholes")
@@ -278,7 +280,7 @@ def timed_job():
                                         
                                         cumilative_put_counter = i
                                         cumilative_put = 0    
-                                        strike_put_counter = 1 # This ensures a liquid strike is the max pain
+                                        strike_put_counter = 0 # This ensures a liquid strike is the max pain make it 1
                                         while cumilative_call_counter > 0:
                                                 cumilative_call_counter = cumilative_call_counter - 1
                                                 #print(max_pain_list[i][0] ,max_pain_list[cumilative_call_counter][3], max_pain_list[strike_call_counter][5])
