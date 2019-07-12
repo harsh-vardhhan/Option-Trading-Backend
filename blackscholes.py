@@ -89,9 +89,7 @@ def cal_iv(S, K, T, P, r, sigma=0.25, tolerance=0.0001,type="call"):
 
 @sched.scheduled_job('interval', minutes=2)
 def timed_job():
-                r.set("access_token", "5c3acdff7d888a48de122a8b0b9e85307ac0d7ff")
                 def create_session():
-                        print(r.get("access_token").decode("utf-8"))
                         upstox = Upstox(api_key, r.get("access_token").decode("utf-8"))
                         return upstox
                 print("****Running Black Scholes")
