@@ -9,7 +9,8 @@ from app.fn_views import (
     get_full_quotes, 
     validate_token,
     subscribe_quotes,
-    update_option
+    update_option,
+    live_feed
 )
 
 router = DefaultRouter()
@@ -23,7 +24,8 @@ urlpatterns = [
     path('quote/', get_full_quotes),
     path('validatetoken/', validate_token),
     path('subscribequotes/', subscribe_quotes),
-    path('updateoption/', update_option)
+    path('updateoption/', update_option),
+    path('livefeed/',live_feed)
 ]
 
 urlpatterns += router.urls

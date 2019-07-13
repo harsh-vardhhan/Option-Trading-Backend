@@ -51,7 +51,7 @@ symbols = ['NIFTY','BANKNIFTY']
 # r.flushall()
 
 
-#r.set("access_token", "5c3acdff7d888a48de122a8b0b9e85307ac0d7ff")
+#r.set("access_token", "8239058f723a6970291437ae83e2edf63ede2983")
 
 
 
@@ -96,14 +96,9 @@ def get_access_token(request):
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
     u = Upstox (api_key, access_token)
-    try:
-        u = Upstox(api_key, access_token)
-        user_profile = u.get_profile()
-        if (user_profile.get('client_id') == client_id):
-            r.set("access_token", access_token)
-            start_socket()
-    except:
-        print("**TOKEN INVALID**")
+    user_profile = u.get_profile()
+    if (user_profile.get('client_id') == client_id):
+        r.set("access_token", access_token)
     return Response({"accessToken": access_token})
 
  
