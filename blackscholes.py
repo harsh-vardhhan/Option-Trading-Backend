@@ -23,30 +23,29 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 
 # NOTE token r.set only in DEV mode
-#r.set("access_token", "5c3acdff7d888a48de122a8b0b9e85307ac0d7ff")
+#r.set("access_token", "cf39b26f37f0978fe8b6b9c5904174fc3a56b355")
 access_token = r.get("access_token").decode("utf-8")
 
 from datetime import datetime, time
 
 def is_time_between(begin_time, end_time, check_time=None):
-    # If check time is not given, default to current UTC time
-    return True
-    tz = pytz.timezone('Asia/Kolkata')
-    check_time = check_time or datetime.now(tz).time()
-    if begin_time < end_time:
-        return check_time >= begin_time and check_time <= end_time
-    else: # crosses midnight
-        return check_time >= begin_time or check_time <= end_time
+        # If check time is not given, default to current UTC time
+        tz = pytz.timezone('Asia/Kolkata')
+        check_time = check_time or datetime.now(tz).time()
+        if begin_time < end_time:
+                return check_time >= begin_time and check_time <= end_time
+        else: # crosses midnight
+                return check_time >= begin_time or check_time <= end_time
 
 
 def Greeks_call (S, X, T, r, sigma):
-    d1 = (math.log (S/X) + (r + (sigma * sigma) / 2) * T) / (sigma * math.sqrt(T))
-    d2 = d1 - sigma * math.sqrt (T)
-    Delta_call = si.norm.cdf(d1)
-    Gamma = si.norm.pdf(d1) / (S * sigma * math.sqrt(T))
-    Vega = (S * math.sqrt(T) * si.norm.pdf(d1))/100
-    Theta_call = (-(S * sigma * si.norm.pdf(d1)) / (2 * math.sqrt(T)) - r * X * math.exp(-r * T) * si.norm.cdf(d2))/365
-    return (Delta_call, Gamma, Vega, Theta_call)
+        d1 = (math.log (S/X) + (r + (sigma * sigma) / 2) * T) / (sigma * math.sqrt(T))
+        d2 = d1 - sigma * math.sqrt (T)
+        Delta_call = si.norm.cdf(d1)
+        Gamma = si.norm.pdf(d1) / (S * sigma * math.sqrt(T))
+        Vega = (S * math.sqrt(T) * si.norm.pdf(d1))/100
+        Theta_call = (-(S * sigma * si.norm.pdf(d1)) / (2 * math.sqrt(T)) - r * X * math.exp(-r * T) * si.norm.cdf(d2))/365
+        return (Delta_call, Gamma, Vega, Theta_call)
 
 def Greeks_put (S, X, T, r, sigma):
         d1 = (math.log (S/X) + (r + (sigma * sigma) / 2) * T) / (sigma * math.sqrt(T))
@@ -228,7 +227,7 @@ def timed_job():
                                                         0.1,
                                                         iv
                                                         )
-                                                Gamma_val = round(Gamma, 3)
+                                                Gamma_val = round(Gamma, 4)
                                                 Vega_val = round(Vega, 2)
                                                 Delta_call_val = round(Delta_call, 2) 
                                                 Theta_call_val = round(Theta_call, 2) 
@@ -306,4 +305,4 @@ def timed_job():
                                 r.set("PCR"+symbol[0] + future_date,pcr)
 
 sched.start()
-#timed_job()
+# timed_job()

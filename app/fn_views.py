@@ -51,7 +51,7 @@ symbols = ['NIFTY','BANKNIFTY']
 # r.flushall()
 
 
-#r.set("access_token", "8239058f723a6970291437ae83e2edf63ede2983")
+#r.set("access_token", "7c47231c687f3cb348ba1a6c3df6d2092076a412")
 
 
 
@@ -348,6 +348,8 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                         if (symbol_key != None):
                             symbol_decoded =  symbol_key.decode('utf-8')
                             option = json.loads(symbol_decoded)
+                            ask = (option['asks'][0]).get('price')
+                            bid = (option['bids'][0]).get('price')
                             full_quote_obj = Full_Quote(
                                 strike_price = ops.strike_price,
                                 exchange = option['exchange'],
@@ -367,7 +369,9 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                                 upper_circuit = option['upper_circuit'],
                                 yearly_low = option['yearly_low'],
                                 yearly_high = option['yearly_high'],
-                                ltt = option['ltt']
+                                ltt = option['ltt'],
+                                bid = bid,
+                                ask = ask
                             )
                             full_quotes.append(full_quote_obj)
     connection.close()
