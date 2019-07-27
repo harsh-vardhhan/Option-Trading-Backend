@@ -31,6 +31,8 @@ dc_  : Delta Call of option
 tc_  : Theta Call of option
 dp_  : Delta Put of option
 tp_  : Theta Put of option
+ls_  : Lot Size 
+pp_  : Projected Profit
 '''
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
@@ -51,9 +53,13 @@ symbols = ['NIFTY','BANKNIFTY']
 # r.flushall()
 
 
-#r.set("access_token", "7c47231c687f3cb348ba1a6c3df6d2092076a412")
+#r.set("access_token", "0ea2c7eb621c63ad98853f8a5d92e35e73da2e25")
 
+def save_lot_size():
+    r.set("ls_NIFTY", 75)
+    r.set("ls_BANKNIFTY", 25)
 
+save_lot_size()
 
 # TODO test in with live data
 @api_view()
@@ -85,6 +91,74 @@ def get_redirect_url(request):
     url = session.get_login_url()
     print(url)
     return Response({"url": url})
+
+
+@api_view(['POST'])
+def cal_strategy(request):
+    request_data = json.loads(json.dumps(request.data))
+    symbols = request_data['symbol']
+    parent_symbol = request_data['parent_symbol']
+    
+    
+    for i, symbol in enumerate(symbols):
+
+        list_option = Full_Quote.objects\
+                        .all()\
+                        .filter(symbol__startswith = parent_symbol)\
+                        .order_by('strike_price')
+
+        for ops in list_option:
+            # enumerate & clear keys holding the returns using symbols 
+            # when on the first key
+            if (i ==0):
+                r.set("pp_"+ops.symbol[:-2], 0)
+
+            if(symbol[0].get("Buy") != None and symbol[0].get("Buy")!= 0
+            or symbol[0].get("Sell") != None and symbol[0].get("Sell")!= 0):
+                
+                instrument = json.loads(r.get((symbol[0].get("symbol").lower()))) 
+                instrument_name = instrument.get('symbol')
+                
+                premium = instrument.get('ltp')
+                strike_price = json.loads(r.get(("s_"+symbol[0].get("symbol").lower())))
+                spot_price = json.loads(r.get("stock_price"+parent_symbol))
+                lot_size = json.loads(r.get("ls_"+parent_symbol))
+                Buy = symbol[0].get("Buy")
+                Sell = symbol[0].get("Sell")
+
+                # Calls                
+                if(ops.symbol[-2:] == "CE"):
+                    max_return = 0
+                    if (Buy > 0):
+                        #ITM Buy Call
+                        if(ops.strike_price >= strike_price):
+                            max_return = ((ops.strike_price - strike_price) - premium) * lot_size
+                        #OTM Buy Call
+                        if(ops.strike_price < strike_price):
+                            max_return = (-premium) * lot_size
+                    elif (Sell > 0):
+                        #ITM Sell Call
+                        if(ops.strike_price >= strike_price):
+                            max_return = ((strike_price - ops.strike_price) + premium) * lot_size
+                        #OTM Sell Call
+                        if(ops.strike_price < strike_price):
+                            max_return = (premium) * lot_size
+                    
+                    if (r.get("pp_"+ops.symbol[:-2]) == None):
+                        r.set("pp_"+ops.symbol[:-2], max_return)
+                    elif(r.get("pp_"+ops.symbol[:-2]) != None):
+                        old_max_return = json.loads(r.get("pp_"+ops.symbol[:-2]))
+                        new_max_return = max_return + old_max_return
+                        r.set("pp_"+ops.symbol[:-2], new_max_return)
+           
+            if(symbol[1].get("Buy") != None and symbol[1].get("Buy")!= 0
+            or symbol[1].get("Sell") != None and symbol[1].get("Sell")!= 0):
+                print(symbol[1].get("symbol"), 
+                "Buy :",symbol[1].get("Buy"), 
+                "Sell :",symbol[1].get("Sell"))
+
+    return Response({"data": "received"})
+
 
 
 @api_view(['POST'])
@@ -393,10 +467,10 @@ def validate_token(request):
 def store_dates():
     Expiry_Date.objects.all().delete()
     Expiry_Date(
-        upstox_date = "19JUL",
-        expiry_date = str(date(2019, 7, 25)),
-        label_date = "25 JULY (Monthly)",
-        future_date = "19JUL"
+        upstox_date = "19AUG",
+        expiry_date = str(date(2019, 8, 19)),
+        label_date = "19 AUG (Monthly)",
+        future_date = "19AUG"
     ).save()
     connection.close()
 
@@ -413,7 +487,7 @@ def get_full_quotes(request):
     symbol = request_data['symbol']
     expiry_date = request_data['expiry_date']
     if (expiry_date == "0"):
-        expiry_date = "19JUL"
+        expiry_date = "19AUG"
     dates = list(Expiry_Date.objects.all())
     connection.close()
     '''
@@ -439,16 +513,14 @@ def get_full_quotes(request):
                     trimmed_symbol = (a.symbol.lower())[:-2]
                     if r.get("g_"+trimmed_symbol) != None:
 
-
-
                         gamma = r.get("g_"+trimmed_symbol).decode('utf-8')
                         vega = r.get("v_"+trimmed_symbol).decode('utf-8')
                         
-                        newIV = r.get("iv_"+a.symbol.lower())
+                        newIV = r.get("iv_"+a.symbol.lower()[:-2])
                         if newIV != None:
                             iv = (newIV).decode("utf-8")
 
-                        newIV = r.get("iv_"+b.symbol.lower())
+                        newIV = r.get("iv_"+b.symbol.lower()[:-2])
                         if newIV != None:
                             iv = (newIV).decode("utf-8")
                         

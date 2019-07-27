@@ -102,8 +102,8 @@ def timed_job():
                         indices_2= "NIFTY_BANK"
                         
                         nse_index = 'NSE_INDEX'
-                        future_date = "19JUL"
-                        expiry_date = date(2019, 7, 25)
+                        future_date = "19AUG"
+                        expiry_date = date(2019, 8, 19)
 
                         symbols = []
                         symbol_indices_2 = (symbol_2, indices_2)
@@ -187,7 +187,7 @@ def timed_job():
          
                                                 
                                                 if (instrument_a_strike < equity_price):
-                                                     iv = cal_iv(
+                                                        iv = cal_iv(
                                                                 future_price,
                                                                 instrument_a_strike,
                                                                 time_to_maturity,
@@ -196,10 +196,12 @@ def timed_job():
                                                                 0.25,
                                                                 0.0001, 
                                                                 "call"
-                                                                ) 
+                                                                )
+
+                                                        r.set("iv_"+instrument_symbol_a[:-2],iv)
 
                                                 if (instrument_a_strike > equity_price):
-                                                     iv = cal_iv(
+                                                        iv = cal_iv(
                                                                 future_price,
                                                                 instrument_a_strike,
                                                                 time_to_maturity,
@@ -209,6 +211,8 @@ def timed_job():
                                                                 0.0001, 
                                                                 "put"
                                                                 )
+
+                                                        r.set("iv_"+instrument_symbol_a[:-2],iv)
                                                 if (iv == 0):
                                                         iv = 10
                                                 
@@ -233,6 +237,7 @@ def timed_job():
                                                 Theta_call_val = round(Theta_call, 2) 
                                                 Delta_put_val = round(Delta_put, 2)
                                                 Theta_put_val = round(Theta_put, 2) 
+                                                
                                                 r.set("g_"+instrument_symbol_a[:-2],Gamma_val)
                                                 r.set("v_"+instrument_symbol_a[:-2],Vega_val)
                                                 r.set("dc_"+instrument_symbol_a[:-2],Delta_call_val)
@@ -305,4 +310,4 @@ def timed_job():
                                 r.set("PCR"+symbol[0] + future_date,pcr)
 
 sched.start()
-# timed_job()
+#timed_job()

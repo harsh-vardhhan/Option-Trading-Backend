@@ -10,7 +10,8 @@ from app.fn_views import (
     validate_token,
     subscribe_quotes,
     update_option,
-    live_feed
+    live_feed,
+    cal_strategy
 )
 
 router = DefaultRouter()
@@ -25,7 +26,8 @@ urlpatterns = [
     path('validatetoken/', validate_token),
     path('subscribequotes/', subscribe_quotes),
     path('updateoption/', update_option),
-    path('livefeed/',live_feed)
+    path('livefeed/',live_feed),
+    path('calstrategy/',cal_strategy)
 ]
 
 urlpatterns += router.urls
