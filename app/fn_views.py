@@ -130,19 +130,25 @@ def cal_strategy(request):
                 if(ops.symbol[-2:] == "CE"):
                     max_return = 0
                     if (Buy > 0):
-                        #ITM Buy Call
-                        if(ops.strike_price >= strike_price):
-                            max_return = ((ops.strike_price - strike_price) - premium) * lot_size
-                        #OTM Buy Call
-                        if(ops.strike_price < strike_price):
-                            max_return = (-premium) * lot_size
+                        for _ in it.repeat(None, Buy):
+                            #ITM Buy Call
+                            if(ops.strike_price >= strike_price):
+                                max_return_it = ((ops.strike_price - strike_price) - premium) * lot_size
+                                max_return = max_return + max_return_it
+                            #OTM Buy Call
+                            if(ops.strike_price < strike_price):
+                                max_return_it = (-premium) * lot_size
+                                max_return = max_return + max_return_it
                     elif (Sell > 0):
-                        #ITM Sell Call
-                        if(ops.strike_price >= strike_price):
-                            max_return = ((strike_price - ops.strike_price) + premium) * lot_size
-                        #OTM Sell Call
-                        if(ops.strike_price < strike_price):
-                            max_return = (premium) * lot_size
+                        for _ in it.repeat(None, Sell):
+                            #ITM Sell Call
+                            if(ops.strike_price >= strike_price):
+                                max_return_it = ((strike_price - ops.strike_price) + premium) * lot_size
+                                max_return = max_return + max_return_it
+                            #OTM Sell Call
+                            if(ops.strike_price < strike_price):
+                                max_return_it = (premium) * lot_size
+                                max_return = max_return + max_return_it
                     
                     if (r.get("pp_"+ops.symbol[:-2]) == None):
                         r.set("pp_"+ops.symbol[:-2], max_return)
@@ -153,9 +159,50 @@ def cal_strategy(request):
            
             if(symbol[1].get("Buy") != None and symbol[1].get("Buy")!= 0
             or symbol[1].get("Sell") != None and symbol[1].get("Sell")!= 0):
-                print(symbol[1].get("symbol"), 
-                "Buy :",symbol[1].get("Buy"), 
-                "Sell :",symbol[1].get("Sell"))
+
+                instrument = json.loads(r.get((symbol[1].get("symbol").lower()))) 
+                instrument_name = instrument.get('symbol')
+                
+                premium = instrument.get('ltp')
+                strike_price = json.loads(r.get(("s_"+symbol[1].get("symbol").lower())))
+                spot_price = json.loads(r.get("stock_price"+parent_symbol))
+                lot_size = json.loads(r.get("ls_"+parent_symbol))
+                Buy = symbol[1].get("Buy")
+                Sell = symbol[1].get("Sell")
+
+                # Puts                
+                if(ops.symbol[-2:] == "PE"):
+                    max_return = 0
+                    if (Buy > 0):
+                        for _ in it.repeat(None, Buy):
+                            #ITM Buy Put
+                            if(ops.strike_price <= strike_price):
+                                max_return_it = ((strike_price - ops.strike_price) - premium) * lot_size
+                                max_return = max_return + max_return_it
+                            #OTM Buy Put
+                            if(ops.strike_price > strike_price):
+                                max_return_it = (-premium) * lot_size
+                                max_return = max_return + max_return_it
+                    elif (Sell > 0):
+                        for _ in it.repeat(None, Sell):
+                            #ITM Sell Put
+                            if(ops.strike_price <= strike_price):
+                                max_return_it = ((ops.strike_price - strike_price) + premium) * lot_size
+                                max_return = max_return + max_return_it
+                            #OTM Sell Put
+                            if(ops.strike_price > strike_price):
+                                max_return_it = (premium) * lot_size
+                                max_return = max_return + max_return_it
+                    
+                    if (r.get("pp_"+ops.symbol[:-2]) == None):
+                        r.set("pp_"+ops.symbol[:-2], max_return)
+                    elif(r.get("pp_"+ops.symbol[:-2]) != None):
+                        old_max_return = json.loads(r.get("pp_"+ops.symbol[:-2]))
+                        new_max_return = max_return + old_max_return
+                        r.set("pp_"+ops.symbol[:-2], new_max_return)
+            
+            print(ops.symbol[:-2],json.loads(r.get("pp_"+ops.symbol[:-2])))
+        print("*********************************")
 
     return Response({"data": "received"})
 
