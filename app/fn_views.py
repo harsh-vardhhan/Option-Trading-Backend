@@ -98,16 +98,23 @@ def cal_strategy(request):
     request_data = json.loads(json.dumps(request.data))
     symbols = request_data['symbol']
     parent_symbol = request_data['parent_symbol']
-    
-    
+    max_profit_expiry = 0
+    max_loss_expiry = 0
+    symbol_len = len(symbols)
     for i, symbol in enumerate(symbols):
 
         list_option = Full_Quote.objects\
                         .all()\
                         .filter(symbol__startswith = parent_symbol)\
                         .order_by('strike_price')
+        option_len = len(list_option)
 
-        for ops in list_option:
+        second_last = 0
+        last = 0
+        first = 0
+        second = 0
+
+        for j, ops in enumerate(list_option):
             # enumerate & clear keys holding the returns using symbols 
             # when on the first key
             if (i ==0):
@@ -200,11 +207,48 @@ def cal_strategy(request):
                         old_max_return = json.loads(r.get("pp_"+ops.symbol[:-2]))
                         new_max_return = max_return + old_max_return
                         r.set("pp_"+ops.symbol[:-2], new_max_return)
-            
-            print(ops.symbol[:-2],json.loads(r.get("pp_"+ops.symbol[:-2])))
-        print("*********************************")
+            #last iteration
+            if (i == symbol_len - 1):
+                if (j == 0):
+                    max_profit_expiry = 0
+                    max_loss_expiry = 100000000000000000000000
 
-    return Response({"data": "received"})
+                max_profit = json.loads(r.get("pp_"+ops.symbol[:-2]))
+                if (max_profit > max_profit_expiry):
+                    max_profit_expiry = max_profit
+
+                if (max_profit < max_loss_expiry):
+                    max_loss_expiry = max_profit
+                
+                if (j == option_len - 3):
+                    second_last = max_profit
+                if (j == option_len - 1):
+                    last = max_profit
+                    if(last > second_last):
+                        max_profit_expiry = "Unlimited"
+                    elif(last < second_last):
+                        max_loss_expiry = "Unlimited"
+
+                if (j == 0):
+                    first = max_profit
+                if (j == 1):
+                    second = max_profit
+                    if(first > second):
+                        max_loss_expiry = "Unlimited"
+                
+                if (j == option_len - 1):
+                    if(isinstance(max_profit_expiry,float)):
+                        max_profit_expiry = round(max_profit_expiry, 0)
+                    
+                    if(isinstance(max_loss_expiry,float)):
+                        max_loss_expiry = abs(round(max_loss_expiry, 0))
+                    elif(isinstance(max_loss_expiry,int)):
+                        max_loss_expiry = abs(max_loss_expiry)
+
+    return Response({
+        "max_profit_expiry": max_profit_expiry,
+        "max_loss_expiry": max_loss_expiry
+    })
 
 
 
