@@ -101,6 +101,7 @@ def cal_strategy(request):
     max_profit_expiry = 0
     max_loss_expiry = 0
     symbol_len = len(symbols)
+    premium_paid = 0
     for i, symbol in enumerate(symbols):
 
         list_option = Full_Quote.objects\
@@ -114,6 +115,39 @@ def cal_strategy(request):
         first = 0
         second = 0
 
+        
+        # calculate premium for current spot price
+        lot_size = json.loads(r.get("ls_"+parent_symbol))
+        Buy_Call = symbol[0].get("Buy")
+        Sell_Call = symbol[0].get("Sell")
+        if(Buy_Call != None and Buy_Call != 0
+        or Sell_Call != None and Sell_Call!= 0):
+            instrument = json.loads(r.get((symbol[0].get("symbol").lower()))) 
+            instrument_name = instrument.get('symbol')    
+            premium = instrument.get('ltp')
+            if (Buy_Call > 0):
+                for _ in it.repeat(None, Buy_Call):
+                    premium_paid = premium_paid - (premium * lot_size)
+            if (Sell_Call > 0):
+                for _ in it.repeat(None, Sell_Call):
+                    premium_paid = premium_paid + (premium * lot_size)
+        Buy_Put = symbol[1].get("Buy")
+        Sell_Put = symbol[1].get("Sell")
+        if(Buy_Put != None and Buy_Put != 0
+        or Sell_Put != None and Sell_Put!= 0):
+            instrument = json.loads(r.get((symbol[1].get("symbol").lower()))) 
+            instrument_name = instrument.get('symbol')    
+            premium = instrument.get('ltp')
+            if (Buy_Put > 0):
+                for _ in it.repeat(None, Buy_Put):
+                    premium_paid = premium_paid - (premium * lot_size)
+            if (Sell_Put > 0):
+                for _ in it.repeat(None, Sell_Put):
+                    premium_paid = premium_paid + (premium * lot_size)
+
+
+
+        # treat every strike as a spot price
         for j, ops in enumerate(list_option):
             # enumerate & clear keys holding the returns using symbols 
             # when on the first key
@@ -129,7 +163,6 @@ def cal_strategy(request):
                 premium = instrument.get('ltp')
                 strike_price = json.loads(r.get(("s_"+symbol[0].get("symbol").lower())))
                 spot_price = json.loads(r.get("stock_price"+parent_symbol))
-                lot_size = json.loads(r.get("ls_"+parent_symbol))
                 Buy = symbol[0].get("Buy")
                 Sell = symbol[0].get("Sell")
 
@@ -244,10 +277,14 @@ def cal_strategy(request):
                         max_loss_expiry = abs(round(max_loss_expiry, 0))
                     elif(isinstance(max_loss_expiry,int)):
                         max_loss_expiry = abs(max_loss_expiry)
-
+    if (premium_paid < 0):
+        premium_paid = f'Pay {abs(premium_paid)}'
+    elif(premium_paid> 0):
+        premium_paid = f'Get {premium_paid}'
     return Response({
         "max_profit_expiry": max_profit_expiry,
-        "max_loss_expiry": max_loss_expiry
+        "max_loss_expiry": max_loss_expiry,
+        "premium": premium_paid
     })
 
 
