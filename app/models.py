@@ -1,5 +1,6 @@
 from django.db import models
 
+
 class Instrument(models.Model):
     exchange = models.CharField(max_length=40)
     token = models.CharField(max_length=40)
@@ -13,6 +14,7 @@ class Instrument(models.Model):
     lot_size = models.CharField(max_length=40)
     instrument_type = models.CharField(max_length=40)
     isin = models.CharField(max_length=40)
+
 
 class Full_Quote(models.Model):
     strike_price = models.FloatField(max_length=40)

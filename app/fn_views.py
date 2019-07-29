@@ -45,11 +45,9 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY', 'BANKNIFTY']
 
-
 # r.flushall()
-
-
 # r.set("access_token", "0ea2c7eb621c63ad98853f8a5d92e35e73da2e25")
+
 
 def save_lot_size():
     r.set("ls_NIFTY", 75)
@@ -356,7 +354,7 @@ def save_option(request):
                                 tick_size_val,
                                 lot_size_val,
                                 instrument_type_val,
-                                isin_val):
+                                    isin_val):
                                 if expiry >= get_first_date() and expiry <= get_last_date():
                                     if ops[5] is None:
                                         closing_price_val = ''
@@ -606,7 +604,7 @@ def get_full_quotes(request):
     store_dates()
     request_data = json.loads(json.dumps(request.data))
     # access_token = request_data['accessToken']
-    indices = request_data['indices']
+    # indices = request_data['indices']
     symbol = request_data['symbol']
     expiry_date = request_data['expiry_date']
     if (expiry_date == "0"):
