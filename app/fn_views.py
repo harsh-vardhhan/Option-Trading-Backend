@@ -1,26 +1,22 @@
 from rest_framework.decorators import api_view
 from rest_framework.views import Response
-from upstox_api.api import Session, Upstox, LiveFeedType, OHLCInterval
+from upstox_api.api import Session, Upstox
 import json
 import itertools as it
 from app.models import Instrument, Full_Quote, Expiry_Date
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 import calendar
 from dateutil import relativedelta
-from time import sleep
 import redis
 from rq import Queue
 from worker import conn
 from app.background_process import full_quotes_queue
-from statistics import stdev
 from django.db import connection
-import requests
 import ast
 import os
-from math import sqrt
 from app.consumers import start_subscription, start_update_option
 
-''' 
+'''
 s_   : Instrument Options -> To fetch option strikes
 _    : Full Quotes Options
 c_   : Calcuates Options
@@ -31,12 +27,12 @@ dc_  : Delta Call of option
 tc_  : Theta Call of option
 dp_  : Delta Put of option
 tp_  : Theta Put of option
-ls_  : Lot Size 
+ls_  : Lot Size
 pp_  : Projected Profit
 '''
 
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
-r = redis.from_url(redis_url) 
+r = redis.from_url(redis_url)
 
 
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
@@ -47,17 +43,18 @@ master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
-symbols = ['NIFTY','BANKNIFTY']
+symbols = ['NIFTY', 'BANKNIFTY']
 
 
 # r.flushall()
 
 
-#r.set("access_token", "0ea2c7eb621c63ad98853f8a5d92e35e73da2e25")
+# r.set("access_token", "0ea2c7eb621c63ad98853f8a5d92e35e73da2e25")
 
 def save_lot_size():
     r.set("ls_NIFTY", 75)
     r.set("ls_BANKNIFTY", 25)
+
 
 save_lot_size()
 
@@ -66,16 +63,18 @@ save_lot_size()
 def live_feed(request):
     def event_handler_quote_update(message):
         print("Quote Update: %s" % str(message))
-    
+
     u = Upstox(api_key, r.get("access_token").decode("utf-8"))
     u.set_on_quote_update(event_handler_quote_update)
     u.start_websocket(True)
     return Response({"Socket": "Started"})
 
+
 @api_view()
 def subscribe_quotes(request):
     start_subscription()
     return Response({"Subcription": "Started"})
+
 
 @api_view()
 def update_option(request):
@@ -106,7 +105,7 @@ def cal_strategy(request):
 
         list_option = Full_Quote.objects\
                         .all()\
-                        .filter(symbol__startswith = parent_symbol)\
+                        .filter(symbol__startswith=parent_symbol)\
                         .order_by('strike_price')
         option_len = len(list_option)
 
@@ -115,15 +114,16 @@ def cal_strategy(request):
         first = 0
         second = 0
 
-        
-        # calculate premium for current spot price
         lot_size = json.loads(r.get("ls_"+parent_symbol))
         Buy_Call = symbol[0].get("Buy")
         Sell_Call = symbol[0].get("Sell")
-        if(Buy_Call != None and Buy_Call != 0
-        or Sell_Call != None and Sell_Call!= 0):
-            instrument = json.loads(r.get((symbol[0].get("symbol").lower()))) 
-            instrument_name = instrument.get('symbol')    
+        Buy_Put = symbol[1].get("Buy")
+        Sell_Put = symbol[1].get("Sell")
+
+        # calculate premium for current spot price
+        if(Buy_Call is not None and Buy_Call != 0
+           or Sell_Call is not None and Sell_Call != 0):
+            instrument = json.loads(r.get((symbol[0].get("symbol").lower())))
             premium = instrument.get('ltp')
             if (Buy_Call > 0):
                 for _ in it.repeat(None, Buy_Call):
@@ -131,12 +131,10 @@ def cal_strategy(request):
             if (Sell_Call > 0):
                 for _ in it.repeat(None, Sell_Call):
                     premium_paid = premium_paid + (premium * lot_size)
-        Buy_Put = symbol[1].get("Buy")
-        Sell_Put = symbol[1].get("Sell")
-        if(Buy_Put != None and Buy_Put != 0
-        or Sell_Put != None and Sell_Put!= 0):
-            instrument = json.loads(r.get((symbol[1].get("symbol").lower()))) 
-            instrument_name = instrument.get('symbol')    
+
+        if(Buy_Put is not None and Buy_Put != 0
+           or Sell_Put is not None and Sell_Put != 0):
+            instrument = json.loads(r.get((symbol[1].get("symbol").lower())))
             premium = instrument.get('ltp')
             if (Buy_Put > 0):
                 for _ in it.repeat(None, Buy_Put):
@@ -145,102 +143,92 @@ def cal_strategy(request):
                 for _ in it.repeat(None, Sell_Put):
                     premium_paid = premium_paid + (premium * lot_size)
 
-
-
         # treat every strike as a spot price
         for j, ops in enumerate(list_option):
-            # enumerate & clear keys holding the returns using symbols 
+            # enumerate & clear keys holding the returns using symbols
             # when on the first key
-            if (i ==0):
+            if (i == 0):
                 r.set("pp_"+ops.symbol[:-2], 0)
 
-            if(symbol[0].get("Buy") != None and symbol[0].get("Buy")!= 0
-            or symbol[0].get("Sell") != None and symbol[0].get("Sell")!= 0):
-                
-                instrument = json.loads(r.get((symbol[0].get("symbol").lower()))) 
-                instrument_name = instrument.get('symbol')
-                
+            spot_price = ops.strike_price
+            spot_symbol = ops.symbol
+
+            if(Buy_Call is not None and Buy_Call != 0
+               or Sell_Call is not None and Sell_Call != 0):
+
+                instrument = json.loads(r.get((symbol[0].get("symbol").lower())))
                 premium = instrument.get('ltp')
                 strike_price = json.loads(r.get(("s_"+symbol[0].get("symbol").lower())))
-                spot_price = json.loads(r.get("stock_price"+parent_symbol))
-                Buy = symbol[0].get("Buy")
-                Sell = symbol[0].get("Sell")
 
-                # Calls                
-                if(ops.symbol[-2:] == "CE"):
+                # Calls
+                if(spot_symbol[-2:] == "CE"):
                     max_return = 0
-                    if (Buy > 0):
-                        for _ in it.repeat(None, Buy):
-                            #ITM Buy Call
-                            if(ops.strike_price >= strike_price):
-                                max_return_it = ((ops.strike_price - strike_price) - premium) * lot_size
+                    if (Buy_Call > 0):
+                        for _ in it.repeat(None, Buy_Call):
+                            # ITM Buy Call
+                            if(spot_price >= strike_price):
+                                max_return_it = ((spot_price - strike_price) - premium) * lot_size
                                 max_return = max_return + max_return_it
-                            #OTM Buy Call
-                            if(ops.strike_price < strike_price):
+                            # OTM Buy Call
+                            if(spot_price < strike_price):
                                 max_return_it = (-premium) * lot_size
                                 max_return = max_return + max_return_it
-                    elif (Sell > 0):
-                        for _ in it.repeat(None, Sell):
-                            #ITM Sell Call
-                            if(ops.strike_price >= strike_price):
-                                max_return_it = ((strike_price - ops.strike_price) + premium) * lot_size
+                    elif (Sell_Call > 0):
+                        for _ in it.repeat(None, Sell_Call):
+                            # ITM Sell Call
+                            if(spot_price >= strike_price):
+                                max_return_it = ((strike_price - spot_price) + premium) * lot_size
                                 max_return = max_return + max_return_it
-                            #OTM Sell Call
-                            if(ops.strike_price < strike_price):
+                            # OTM Sell Call
+                            if(spot_price < strike_price):
                                 max_return_it = (premium) * lot_size
                                 max_return = max_return + max_return_it
-                    
-                    if (r.get("pp_"+ops.symbol[:-2]) == None):
-                        r.set("pp_"+ops.symbol[:-2], max_return)
-                    elif(r.get("pp_"+ops.symbol[:-2]) != None):
-                        old_max_return = json.loads(r.get("pp_"+ops.symbol[:-2]))
-                        new_max_return = max_return + old_max_return
-                        r.set("pp_"+ops.symbol[:-2], new_max_return)
-           
-            if(symbol[1].get("Buy") != None and symbol[1].get("Buy")!= 0
-            or symbol[1].get("Sell") != None and symbol[1].get("Sell")!= 0):
 
-                instrument = json.loads(r.get((symbol[1].get("symbol").lower()))) 
-                instrument_name = instrument.get('symbol')
-                
+                    if (r.get("pp_"+spot_symbol[:-2]) is None):
+                        r.set("pp_"+spot_symbol[:-2], max_return)
+                    elif(r.get("pp_"+spot_symbol[:-2]) is not None):
+                        old_max_return = json.loads(r.get("pp_"+spot_symbol[:-2]))
+                        new_max_return = max_return + old_max_return
+                        r.set("pp_"+spot_symbol[:-2], new_max_return)
+
+            if(Buy_Put is not None and Buy_Put != 0
+               or Sell_Put is not None and Sell_Put != 0):
+
+                instrument = json.loads(r.get((symbol[1].get("symbol").lower())))
                 premium = instrument.get('ltp')
                 strike_price = json.loads(r.get(("s_"+symbol[1].get("symbol").lower())))
-                spot_price = json.loads(r.get("stock_price"+parent_symbol))
-                lot_size = json.loads(r.get("ls_"+parent_symbol))
-                Buy = symbol[1].get("Buy")
-                Sell = symbol[1].get("Sell")
 
-                # Puts                
-                if(ops.symbol[-2:] == "PE"):
+                # Puts
+                if(spot_symbol[-2:] == "PE"):
                     max_return = 0
-                    if (Buy > 0):
-                        for _ in it.repeat(None, Buy):
-                            #ITM Buy Put
-                            if(ops.strike_price <= strike_price):
-                                max_return_it = ((strike_price - ops.strike_price) - premium) * lot_size
+                    if (Buy_Put > 0):
+                        for _ in it.repeat(None, Buy_Put):
+                            # ITM Buy Put
+                            if(spot_price <= strike_price):
+                                max_return_it = ((strike_price - spot_price) - premium) * lot_size
                                 max_return = max_return + max_return_it
-                            #OTM Buy Put
-                            if(ops.strike_price > strike_price):
+                            # OTM Buy Put
+                            if(spot_price > strike_price):
                                 max_return_it = (-premium) * lot_size
                                 max_return = max_return + max_return_it
-                    elif (Sell > 0):
-                        for _ in it.repeat(None, Sell):
-                            #ITM Sell Put
-                            if(ops.strike_price <= strike_price):
-                                max_return_it = ((ops.strike_price - strike_price) + premium) * lot_size
+                    elif (Sell_Put > 0):
+                        for _ in it.repeat(None, Sell_Put):
+                            # ITM Sell Put
+                            if(spot_price <= strike_price):
+                                max_return_it = ((spot_price - strike_price) + premium) * lot_size
                                 max_return = max_return + max_return_it
-                            #OTM Sell Put
-                            if(ops.strike_price > strike_price):
+                            # OTM Sell Put
+                            if(spot_price > strike_price):
                                 max_return_it = (premium) * lot_size
                                 max_return = max_return + max_return_it
-                    
-                    if (r.get("pp_"+ops.symbol[:-2]) == None):
-                        r.set("pp_"+ops.symbol[:-2], max_return)
-                    elif(r.get("pp_"+ops.symbol[:-2]) != None):
-                        old_max_return = json.loads(r.get("pp_"+ops.symbol[:-2]))
+
+                    if (r.get("pp_"+spot_symbol[:-2]) is None):
+                        r.set("pp_"+spot_symbol[:-2], max_return)
+                    elif(r.get("pp_"+spot_symbol[:-2]) is not None):
+                        old_max_return = json.loads(r.get("pp_"+spot_symbol[:-2]))
                         new_max_return = max_return + old_max_return
-                        r.set("pp_"+ops.symbol[:-2], new_max_return)
-            #last iteration
+                        r.set("pp_"+spot_symbol[:-2], new_max_return)
+            # last iteration
             if (i == symbol_len - 1):
                 if (j == 0):
                     max_profit_expiry = 0
@@ -252,7 +240,7 @@ def cal_strategy(request):
 
                 if (max_profit < max_loss_expiry):
                     max_loss_expiry = max_profit
-                
+
                 if (j == option_len - 3):
                     second_last = max_profit
                 if (j == option_len - 1):
@@ -268,25 +256,24 @@ def cal_strategy(request):
                     second = max_profit
                     if(first > second):
                         max_loss_expiry = "Unlimited"
-                
+
                 if (j == option_len - 1):
-                    if(isinstance(max_profit_expiry,float)):
+                    if(isinstance(max_profit_expiry, float)):
                         max_profit_expiry = round(max_profit_expiry, 0)
-                    
-                    if(isinstance(max_loss_expiry,float)):
+
+                    if(isinstance(max_loss_expiry, float)):
                         max_loss_expiry = abs(round(max_loss_expiry, 0))
-                    elif(isinstance(max_loss_expiry,int)):
+                    elif(isinstance(max_loss_expiry, int)):
                         max_loss_expiry = abs(max_loss_expiry)
     if (premium_paid < 0):
         premium_paid = f'Pay {abs(premium_paid)}'
-    elif(premium_paid> 0):
+    elif(premium_paid > 0):
         premium_paid = f'Get {premium_paid}'
     return Response({
         "max_profit_expiry": max_profit_expiry,
         "max_loss_expiry": max_loss_expiry,
         "premium": premium_paid
     })
-
 
 
 @api_view(['POST'])
@@ -297,42 +284,46 @@ def get_access_token(request):
     session.set_api_secret(secret_key)
     session.set_code(request_data['requestcode'])
     access_token = session.retrieve_access_token()
-    u = Upstox (api_key, access_token)
+    u = Upstox(api_key, access_token)
     user_profile = u.get_profile()
     if (user_profile.get('client_id') == client_id):
         r.set("access_token", access_token)
     return Response({"accessToken": access_token})
 
- 
+
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
 def save_option(request):
     store_dates()
+
     def create_session():
         request_data = json.loads(json.dumps(request.data))
         upstox = Upstox(api_key, request_data['accessToken'])
         return upstox
+
     def search_options(symbol):
         upstox = create_session()
         upstox.get_master_contract(master_contract_FO)
         option_search = upstox.search_instruments(master_contract_FO, symbol)
         return option_search
+
     def list_options():
         # Get First and Last Day of the Current Month/Week
         def get_first_date():
             today = datetime.now().today() + relativedelta.relativedelta(weeks=1)
-            first_day_date = datetime(today.year, today.month, 1).timestamp() * 1000
+            first_day_date = datetime(today.year, today.month, 1).timestamp()*1000
             return first_day_date
+
         def get_last_date():
             today = datetime.now().today() + relativedelta.relativedelta(weeks=1)
             last_day = calendar.monthrange(today.year, today.month)[1]
-            last_day_date = datetime(today.year, today.month, last_day).timestamp() * 1000
+            last_day_date = datetime(today.year, today.month, last_day).timestamp()*1000
             return last_day_date
         # Creating Python Objects of all options
         all_options = []
         Instrument.objects.all().delete()
         for symbol in symbols:
-            for ops in search_options(symbol):       
+            for ops in search_options(symbol):
                 expiry = int(ops[6])
                 exchange_val = ops[0]
                 token_val = ops[1]
@@ -345,10 +336,10 @@ def save_option(request):
                 tick_size_val = ops[8]
                 lot_size_val = ops[9]
                 instrument_type_val = ops[10]
-                isin_val = ops[11]   
-                if strike_price_val != None:
-                    if closing_price_val != None:
-                        # Avoid NIFTYIT since searching for 
+                isin_val = ops[11]
+                if strike_price_val is not None:
+                    if closing_price_val is not None:
+                        # Avoid NIFTYIT since searching for
                         # NIFTY and BANKNIFTY alongs brings
                         # along this and it lacks liquidity
                         if symbol_val[:7] != niftyit:
@@ -368,11 +359,11 @@ def save_option(request):
                                 isin_val):
                                 if expiry >= get_first_date() and expiry <= get_last_date():
                                     if ops[5] is None:
-                                            closing_price_val = ''
+                                        closing_price_val = ''
                                     if ops[11] is None:
-                                            isin_val = ''
+                                        isin_val = ''
                                     if ops[7] is None:
-                                            strike_price_val = ''
+                                        strike_price_val = ''
                                     Instrument(
                                         exchange=exchange_val,
                                         token=token_val,
@@ -381,10 +372,10 @@ def save_option(request):
                                         name=name_val,
                                         closing_price=closing_price_val,
                                         expiry=expiry_val,
-                                        strike_price=float(strike_price_val), 
+                                        strike_price=float(strike_price_val),
                                         tick_size=tick_size_val,
                                         lot_size=lot_size_val,
-                                        instrument_type=instrument_type_val, 
+                                        instrument_type=instrument_type_val,
                                         isin=isin_val
                                     ).save()
                                     r.set("s_"+symbol_val, float(strike_price_val))
@@ -434,7 +425,7 @@ def save_option(request):
 
 # Step 1: Fetch all the  Full Quotes and cache it in redis
 # NOTE - This is a time consuming process there instruments
-# passed through this should be filtred. 
+# passed through this should be filtred.
 @api_view(['POST'])
 def cache_full_quotes_redis(request):
     store_dates()
@@ -462,7 +453,7 @@ def cache_full_quotes_redis(request):
                     expiry_date_fetched = trim_symbol[:len(expiry_dated.upstox_date)]
                     if(expiry_date_fetched.upper() == expiry_dated.upstox_date):
                         q.enqueue(full_quotes_queue, access_token, ops.symbol)
-    return Response({"Message": "Quotes Saved"}) 
+    return Response({"Message": "Quotes Saved"})
 
 # Step 2: From redis move all the Quotes to database
 # NOTE: This Function should now run only after hours
@@ -470,6 +461,7 @@ def cache_full_quotes_redis(request):
 @api_view(['POST'])
 def save_full_quotes_db(request):
     request_data = json.loads(json.dumps(request.data))
+
     # create_session method exclusively while developing in online mode
     def create_session():
         upstox = Upstox(api_key, request_data['accessToken'])
@@ -489,40 +481,42 @@ def save_full_quotes_db(request):
                     symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
                     if (symbol_date.upper() == expiry_date.upstox_date):
                         symbol_key = r.get(ops.symbol)
-                        if (symbol_key != None):                         
+                        if (symbol_key is not None):
                             val = symbol_key.decode("utf-8")
                             option = ast.literal_eval(val)
                             Full_Quote(
-                                strike_price = ops.strike_price,
-                                exchange = option['exchange'],
-                                symbol = option['symbol'],
-                                ltp = option['ltp'],
-                                close = option['close'],
-                                open = option['open'],
-                                high = option['high'],
-                                low = option['low'],
-                                vtt = option['vtt'],
-                                atp = option['atp'],
-                                oi = option['oi'],
-                                spot_price = option['spot_price'],
-                                total_buy_qty = option['total_buy_qty'],
-                                total_sell_qty = option['total_sell_qty'],
-                                lower_circuit = option['lower_circuit'],
-                                upper_circuit = option['upper_circuit'],
-                                yearly_low = option['yearly_low'],
-                                yearly_high = option['yearly_high'],
-                                ltt = option['ltt']
+                                strike_price=ops.strike_price,
+                                exchange=option['exchange'],
+                                symbol=option['symbol'],
+                                ltp=option['ltp'],
+                                close=option['close'],
+                                open=option['open'],
+                                high=option['high'],
+                                low=option['low'],
+                                vtt=option['vtt'],
+                                atp=option['atp'],
+                                oi=option['oi'],
+                                spot_price=option['spot_price'],
+                                total_buy_qty=option['total_buy_qty'],
+                                total_sell_qty=option['total_sell_qty'],
+                                lower_circuit=option['lower_circuit'],
+                                upper_circuit=option['upper_circuit'],
+                                yearly_low=option['yearly_low'],
+                                yearly_high=option['yearly_high'],
+                                ltt=option['ltt']
                             ).save()
     connection.close()
     return Response({"Message": "Full Quotes Saved"})
 
+
 # First Fetches a value from redis
-# if not available put's an 
+# if not available put's an
 # alternative value from database
 # TODO Schedule this function
 # TODO Perform IV Calculations here
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
     request_data = json.loads(json.dumps(request.data))
+
     # create_session method exclusively while developing in online mode
     def create_session():
         upstox = Upstox(api_key, request_data['accessToken'])
@@ -530,7 +524,7 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
     searched_symbol = symbol_req + expiry_date_req
     list_option = Full_Quote.objects\
                             .all()\
-                            .filter(symbol__startswith = searched_symbol)\
+                            .filter(symbol__startswith=searched_symbol)\
                             .order_by('strike_price')
     full_quotes = []
     for symbol in symbols:
@@ -547,38 +541,37 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                     if (symbol_date.upper() == expiry_date.upstox_date):
                         uppercase_symbol = ops.symbol
                         symbol_key = r.get(uppercase_symbol.lower())
-                        if (symbol_key != None):
-                            symbol_decoded =  symbol_key.decode('utf-8')
+                        if (symbol_key is not None):
+                            symbol_decoded = symbol_key.decode('utf-8')
                             option = json.loads(symbol_decoded)
                             ask = (option['asks'][0]).get('price')
                             bid = (option['bids'][0]).get('price')
                             full_quote_obj = Full_Quote(
-                                strike_price = ops.strike_price,
-                                exchange = option['exchange'],
-                                symbol = option['symbol'],
-                                ltp = option['ltp'],
-                                close = option['close'],
-                                open = option['open'],
-                                high = option['high'],
-                                low = option['low'],
-                                vtt = option['vtt'],
-                                atp = option['atp'],
-                                oi = option['oi'],
-                                spot_price = option['spot_price'],
-                                total_buy_qty = option['total_buy_qty'],
-                                total_sell_qty = option['total_sell_qty'],
-                                lower_circuit = option['lower_circuit'],
-                                upper_circuit = option['upper_circuit'],
-                                yearly_low = option['yearly_low'],
-                                yearly_high = option['yearly_high'],
-                                ltt = option['ltt'],
-                                bid = bid,
-                                ask = ask
+                                strike_price=ops.strike_price,
+                                exchange=option['exchange'],
+                                symbol=option['symbol'],
+                                ltp=option['ltp'],
+                                close=option['close'],
+                                open=option['open'],
+                                high=option['high'],
+                                low=option['low'],
+                                vtt=option['vtt'],
+                                atp=option['atp'],
+                                oi=option['oi'],
+                                spot_price=option['spot_price'],
+                                total_buy_qty=option['total_buy_qty'],
+                                total_sell_qty=option['total_sell_qty'],
+                                lower_circuit=option['lower_circuit'],
+                                upper_circuit=option['upper_circuit'],
+                                yearly_low=option['yearly_low'],
+                                yearly_high=option['yearly_high'],
+                                ltt=option['ltt'],
+                                bid=bid,
+                                ask=ask
                             )
                             full_quotes.append(full_quote_obj)
     connection.close()
     return full_quotes
-
 
 
 @api_view(['POST'])
@@ -586,7 +579,7 @@ def validate_token(request):
     access_token = json.dumps(request.data)
     access_token_data = json.loads(access_token)
     try:
-        upstox = Upstox(api_key, access_token_data['accessToken'])
+        Upstox(api_key, access_token_data['accessToken'])
         return Response({"status": 1})
     except:
         return Response({"status": 0})
@@ -595,17 +588,19 @@ def validate_token(request):
 def store_dates():
     Expiry_Date.objects.all().delete()
     Expiry_Date(
-        upstox_date = "19AUG",
-        expiry_date = str(date(2019, 8, 19)),
-        label_date = "19 AUG (Monthly)",
-        future_date = "19AUG"
+        upstox_date="19AUG",
+        expiry_date=str(date(2019, 8, 19)),
+        label_date="19 AUG (Monthly)",
+        future_date="19AUG"
     ).save()
     connection.close()
+
 
 @api_view(['POST'])
 def get_full_quotes(request):
     def obj_dict(obj):
         return obj.__dict__
+
     def toJson(func):
         return json.loads(json.dumps(func, default=obj_dict))
     store_dates()
@@ -634,32 +629,32 @@ def get_full_quotes(request):
 
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
-                # remove strikes which are less than ₹ 10,000 
+                # remove strikes which are less than ₹ 10,000
                 if (a.oi > 0.0 and b.oi > 0.0):
                     # arrange option pair always in CE and PE order
-                    
+
                     trimmed_symbol = (a.symbol.lower())[:-2]
-                    if r.get("g_"+trimmed_symbol) != None:
+                    if r.get("g_"+trimmed_symbol) is not None:
 
                         gamma = r.get("g_"+trimmed_symbol).decode('utf-8')
                         vega = r.get("v_"+trimmed_symbol).decode('utf-8')
-                        
+
                         newIV = r.get("iv_"+a.symbol.lower()[:-2])
-                        if newIV != None:
+                        if newIV is not None:
                             iv = (newIV).decode("utf-8")
 
                         newIV = r.get("iv_"+b.symbol.lower()[:-2])
-                        if newIV != None:
+                        if newIV is not None:
                             iv = (newIV).decode("utf-8")
-                        
+
                         if (a.symbol[-2:] == 'CE' or b.symbol[-2:] == 'CE'):
                             delta_call = r.get("dc_"+trimmed_symbol).decode('utf-8')
                             theta_call = r.get("tc_"+trimmed_symbol).decode('utf-8')
-                        
+
                         if (a.symbol[-2:] == 'PE' or b.symbol[-2:] == 'PE'):
                             delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
-                            theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')                     
-                            
+                            theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
+
                         if (a.symbol[-2:] == 'CE'):
 
                             option_pair = (a, b, a.strike_price, iv, gamma, vega, delta_call, theta_call, delta_put, theta_put)
@@ -670,6 +665,7 @@ def get_full_quotes(request):
         connection.close()
         return option_pairs
     option_pairs = pairing()
+
     def lot_size(symbol):
         if (symbol == "NIFTY"):
             return 75
@@ -680,7 +676,7 @@ def get_full_quotes(request):
         "stock_symbol": r.get("stock_symbol"+symbol),
         "options": toJson(option_pairs),
         "symbol": symbol,
-        "closest_strike" : float(r.get("closest_strike"+symbol+expiry_date).decode("utf-8")),
+        "closest_strike": float(r.get("closest_strike"+symbol+expiry_date).decode("utf-8")),
         "future": r.get("future_price"+symbol),
         "lot_size": toJson(lot_size(symbol)),
         "days_to_expiry": r.get("days_to_expiry"),
