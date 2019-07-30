@@ -275,7 +275,7 @@ def cal_strategy(request):
     if (premium_paid >= 0):
         premium_paid = f'Get {premium_paid}'
     else:
-        premium_paid = f'Pay {abs(premium_paid)}'
+        premium_paid = f'Pay {abs(round(premium_paid))}'
     return Response({
         "max_profit_expiry": max_profit_expiry,
         "max_loss_expiry": max_loss_expiry,
@@ -533,6 +533,7 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                             .all()\
                             .filter(symbol__startswith=searched_symbol)\
                             .order_by('strike_price')
+    connection.close()
     full_quotes = []
     for symbol in symbols:
         for ops in list_option:
@@ -577,7 +578,6 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                                 ask=ask
                             )
                             full_quotes.append(full_quote_obj)
-    connection.close()
     return full_quotes
 
 
@@ -605,6 +605,7 @@ def store_dates():
 
 @api_view(['POST'])
 def get_full_quotes(request):
+
     def obj_dict(obj):
         return obj.__dict__
 
@@ -645,39 +646,21 @@ def get_full_quotes(request):
 
                         gamma = r.get("g_"+trimmed_symbol).decode('utf-8')
                         vega = r.get("v_"+trimmed_symbol).decode('utf-8')
-
-                        newIV = r.get("iv_"+a.symbol.lower()[:-2])
-                        if newIV is not None:
-                            iv = (newIV).decode("utf-8")
-
-                        newIV = r.get("iv_"+b.symbol.lower()[:-2])
-                        if newIV is not None:
-                            iv = (newIV).decode("utf-8")
+                        iv = r.get("iv_" + trimmed_symbol).decode("utf-8")
 
                         if (a.symbol[-2:] == 'CE' or b.symbol[-2:] == 'CE'):
                             delta_call = r.get("dc_"+trimmed_symbol).decode('utf-8')
                             theta_call = r.get("tc_"+trimmed_symbol).decode('utf-8')
-
-                        if (a.symbol[-2:] == 'PE' or b.symbol[-2:] == 'PE'):
-                            delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
-                            theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
-
-                        if (a.symbol[-2:] == 'CE'):
-
                             option_pair = (a, b, a.strike_price, iv, gamma, vega, delta_call, theta_call, delta_put, theta_put)
                             option_pairs.append(option_pair)
                         else:
+                            delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
+                            theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
                             option_pair = (b, a, a.strike_price, iv, gamma, vega, delta_call, theta_call, delta_put, theta_put)
                             option_pairs.append(option_pair)
-        connection.close()
+
         return option_pairs
     option_pairs = pairing()
-
-    def lot_size(symbol):
-        if (symbol == "NIFTY"):
-            return 75
-        elif ("BANKNIFTY"):
-            return 20
     return Response({
         "stock_price": r.get("stock_price"+symbol),
         "stock_symbol": r.get("stock_symbol"+symbol),
@@ -685,7 +668,7 @@ def get_full_quotes(request):
         "symbol": symbol,
         "closest_strike": float(r.get("closest_strike"+symbol+expiry_date).decode("utf-8")),
         "future": r.get("future_price"+symbol),
-        "lot_size": toJson(lot_size(symbol)),
+        "lot_size": json.loads(r.get("ls_"+symbol)),
         "days_to_expiry": r.get("days_to_expiry"),
         "expiry_dates": toJson(dates),
         "expiry_date": expiry_date,
