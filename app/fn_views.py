@@ -137,7 +137,7 @@ def cal_strategy(request):
             if (Buy_Call > 0):
                 for _ in it.repeat(None, Buy_Call):
                     premium_paid = premium_paid - (premium * lot_size)
-            if (Sell_Call > 0):
+            else:
                 for _ in it.repeat(None, Sell_Call):
                     premium_paid = premium_paid + (premium * lot_size)
 
@@ -148,7 +148,7 @@ def cal_strategy(request):
             if (Buy_Put > 0):
                 for _ in it.repeat(None, Buy_Put):
                     premium_paid = premium_paid - (premium * lot_size)
-            if (Sell_Put > 0):
+            else:
                 for _ in it.repeat(None, Sell_Put):
                     premium_paid = premium_paid + (premium * lot_size)
 
@@ -182,23 +182,23 @@ def cal_strategy(request):
                                 max_return_it = ((spot_price - strike_price) - premium) * lot_size
                                 max_return = max_return + max_return_it
                             # OTM Buy Call
-                            if(spot_price < strike_price):
+                            else:
                                 max_return_it = (-premium) * lot_size
                                 max_return = max_return + max_return_it
-                    elif (Sell_Call > 0):
+                    else:
                         for _ in it.repeat(None, Sell_Call):
                             # ITM Sell Call
                             if(spot_price >= strike_price):
                                 max_return_it = ((strike_price - spot_price) + premium) * lot_size
                                 max_return = max_return + max_return_it
                             # OTM Sell Call
-                            if(spot_price < strike_price):
+                            else:
                                 max_return_it = (premium) * lot_size
                                 max_return = max_return + max_return_it
 
                     if (r.get("pp_"+spot_symbol_trim) is None):
                         r.set("pp_"+spot_symbol_trim, max_return)
-                    elif(r.get("pp_"+spot_symbol_trim) is not None):
+                    else:
                         old_max_return = json.loads(r.get("pp_"+spot_symbol_trim))
                         new_max_return = max_return + old_max_return
                         r.set("pp_"+spot_symbol_trim, new_max_return)
@@ -220,23 +220,23 @@ def cal_strategy(request):
                                 max_return_it = ((strike_price - spot_price) - premium) * lot_size
                                 max_return = max_return + max_return_it
                             # OTM Buy Put
-                            if(spot_price > strike_price):
+                            else:
                                 max_return_it = (-premium) * lot_size
                                 max_return = max_return + max_return_it
-                    elif (Sell_Put > 0):
+                    else:
                         for _ in it.repeat(None, Sell_Put):
                             # ITM Sell Put
                             if(spot_price <= strike_price):
                                 max_return_it = ((spot_price - strike_price) + premium) * lot_size
                                 max_return = max_return + max_return_it
                             # OTM Sell Put
-                            if(spot_price > strike_price):
+                            else:
                                 max_return_it = (premium) * lot_size
                                 max_return = max_return + max_return_it
 
                     if (r.get("pp_"+spot_symbol_trim) is None):
                         r.set("pp_"+spot_symbol_trim, max_return)
-                    elif(r.get("pp_"+spot_symbol_trim) is not None):
+                    else:
                         old_max_return = json.loads(r.get("pp_" + spot_symbol_trim))
                         new_max_return = max_return + old_max_return
                         r.set("pp_"+spot_symbol_trim, new_max_return)
@@ -272,10 +272,10 @@ def cal_strategy(request):
                     elif(isinstance(max_loss_expiry, int)):
                         max_loss_expiry = abs(max_loss_expiry)
 
-    if (premium_paid < 0):
-        premium_paid = f'Pay {abs(premium_paid)}'
-    elif(premium_paid > 0):
+    if (premium_paid >= 0):
         premium_paid = f'Get {premium_paid}'
+    else:
+        premium_paid = f'Pay {abs(premium_paid)}'
     return Response({
         "max_profit_expiry": max_profit_expiry,
         "max_loss_expiry": max_loss_expiry,
