@@ -46,7 +46,7 @@ niftyit = 'niftyit'
 symbols = ['NIFTY', 'BANKNIFTY']
 
 # r.flushall()
-# r.set("access_token", "89ac0d33b3cd484c4a72ae858cfea9dcd5bba15e")
+# r.set("access_token", "5a545712a2406c77e87ac2da799248baad2c11f7")
 
 
 def save_lot_size():
@@ -648,7 +648,7 @@ def get_full_quotes(request):
                         vega = r.get("v_"+trimmed_symbol).decode('utf-8')
                         iv = r.get("iv_" + trimmed_symbol).decode("utf-8")
 
-                        if (a.symbol[-2:] == 'CE' or b.symbol[-2:] == 'CE'):
+                        if (a.symbol[-2:] == 'CE'):
                             delta_call = r.get("dc_"+trimmed_symbol).decode('utf-8')
                             theta_call = r.get("tc_"+trimmed_symbol).decode('utf-8')
                             option_pair = (a, b, a.strike_price, iv, gamma, vega, delta_call, theta_call, delta_put, theta_put)
