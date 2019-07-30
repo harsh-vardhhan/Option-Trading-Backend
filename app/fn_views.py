@@ -46,7 +46,7 @@ niftyit = 'niftyit'
 symbols = ['NIFTY', 'BANKNIFTY']
 
 # r.flushall()
-# r.set("access_token", "0ea2c7eb621c63ad98853f8a5d92e35e73da2e25")
+# r.set("access_token", "89ac0d33b3cd484c4a72ae858cfea9dcd5bba15e")
 
 
 def save_lot_size():
@@ -98,25 +98,36 @@ def cal_strategy(request):
     max_profit_expiry = 0
     max_loss_expiry = 0
     symbol_len = len(symbols)
+    last_iteration = symbol_len - 1
     premium_paid = 0
-    for i, symbol in enumerate(symbols):
 
-        list_option = Full_Quote.objects\
-                        .all()\
-                        .filter(symbol__startswith=parent_symbol)\
-                        .order_by('strike_price')
-        option_len = len(list_option)
+    list_option = Full_Quote.objects\
+                            .all()\
+                            .filter(symbol__startswith=parent_symbol)\
+                            .order_by('strike_price')
+    connection.close()
+
+    option_len = len(list_option)
+    last_instrument = option_len - 1
+    second_last_instrument = option_len - 3
+    lot_size = json.loads(r.get("ls_"+parent_symbol))
+
+    max_profit_expiry = 0
+    max_loss_expiry = 100000000000000000000000
+
+    for i, symbol in enumerate(symbols):
 
         second_last = 0
         last = 0
         first = 0
         second = 0
 
-        lot_size = json.loads(r.get("ls_"+parent_symbol))
         Buy_Call = symbol[0].get("Buy")
         Sell_Call = symbol[0].get("Sell")
         Buy_Put = symbol[1].get("Buy")
         Sell_Put = symbol[1].get("Sell")
+        Call_Symbol = symbol[0].get("symbol").lower()
+        Put_Symbol = symbol[1].get("symbol").lower()
 
         # calculate premium for current spot price
         if(Buy_Call is not None and Buy_Call != 0
@@ -143,23 +154,26 @@ def cal_strategy(request):
 
         # treat every strike as a spot price
         for j, ops in enumerate(list_option):
-            # enumerate & clear keys holding the returns using symbols
-            # when on the first key
-            if (i == 0):
-                r.set("pp_"+ops.symbol[:-2], 0)
 
             spot_price = ops.strike_price
             spot_symbol = ops.symbol
+            spot_symbol_trim = spot_symbol[:-2]
+            spot_symbol_type = spot_symbol[-2:]
+
+            # enumerate & clear keys holding the returns using symbols
+            # when on the first key
+            if (i == 0):
+                r.set("pp_"+spot_symbol_trim, 0)
 
             if(Buy_Call is not None and Buy_Call != 0
                or Sell_Call is not None and Sell_Call != 0):
 
-                instrument = json.loads(r.get((symbol[0].get("symbol").lower())))
+                instrument = json.loads(r.get((Call_Symbol)))
                 premium = instrument.get('ltp')
-                strike_price = json.loads(r.get(("s_"+symbol[0].get("symbol").lower())))
+                strike_price = json.loads(r.get(("s_"+Call_Symbol)))
 
                 # Calls
-                if(spot_symbol[-2:] == "CE"):
+                if(spot_symbol_type == "CE"):
                     max_return = 0
                     if (Buy_Call > 0):
                         for _ in it.repeat(None, Buy_Call):
@@ -182,22 +196,22 @@ def cal_strategy(request):
                                 max_return_it = (premium) * lot_size
                                 max_return = max_return + max_return_it
 
-                    if (r.get("pp_"+spot_symbol[:-2]) is None):
-                        r.set("pp_"+spot_symbol[:-2], max_return)
-                    elif(r.get("pp_"+spot_symbol[:-2]) is not None):
-                        old_max_return = json.loads(r.get("pp_"+spot_symbol[:-2]))
+                    if (r.get("pp_"+spot_symbol_trim) is None):
+                        r.set("pp_"+spot_symbol_trim, max_return)
+                    elif(r.get("pp_"+spot_symbol_trim) is not None):
+                        old_max_return = json.loads(r.get("pp_"+spot_symbol_trim))
                         new_max_return = max_return + old_max_return
-                        r.set("pp_"+spot_symbol[:-2], new_max_return)
+                        r.set("pp_"+spot_symbol_trim, new_max_return)
 
             if(Buy_Put is not None and Buy_Put != 0
                or Sell_Put is not None and Sell_Put != 0):
 
-                instrument = json.loads(r.get((symbol[1].get("symbol").lower())))
+                instrument = json.loads(r.get((Put_Symbol)))
                 premium = instrument.get('ltp')
-                strike_price = json.loads(r.get(("s_"+symbol[1].get("symbol").lower())))
+                strike_price = json.loads(r.get(("s_"+Put_Symbol)))
 
                 # Puts
-                if(spot_symbol[-2:] == "PE"):
+                if(spot_symbol_type == "PE"):
                     max_return = 0
                     if (Buy_Put > 0):
                         for _ in it.repeat(None, Buy_Put):
@@ -220,33 +234,21 @@ def cal_strategy(request):
                                 max_return_it = (premium) * lot_size
                                 max_return = max_return + max_return_it
 
-                    if (r.get("pp_"+spot_symbol[:-2]) is None):
-                        r.set("pp_"+spot_symbol[:-2], max_return)
-                    elif(r.get("pp_"+spot_symbol[:-2]) is not None):
-                        old_max_return = json.loads(r.get("pp_"+spot_symbol[:-2]))
+                    if (r.get("pp_"+spot_symbol_trim) is None):
+                        r.set("pp_"+spot_symbol_trim, max_return)
+                    elif(r.get("pp_"+spot_symbol_trim) is not None):
+                        old_max_return = json.loads(r.get("pp_" + spot_symbol_trim))
                         new_max_return = max_return + old_max_return
-                        r.set("pp_"+spot_symbol[:-2], new_max_return)
+                        r.set("pp_"+spot_symbol_trim, new_max_return)
+            
             # last iteration
-            if (i == symbol_len - 1):
-                if (j == 0):
-                    max_profit_expiry = 0
-                    max_loss_expiry = 100000000000000000000000
-
+            if (i == last_iteration):
                 max_profit = json.loads(r.get("pp_"+ops.symbol[:-2]))
                 if (max_profit > max_profit_expiry):
                     max_profit_expiry = max_profit
 
                 if (max_profit < max_loss_expiry):
                     max_loss_expiry = max_profit
-
-                if (j == option_len - 3):
-                    second_last = max_profit
-                if (j == option_len - 1):
-                    last = max_profit
-                    if(last > second_last):
-                        max_profit_expiry = "Unlimited"
-                    elif(last < second_last):
-                        max_loss_expiry = "Unlimited"
 
                 if (j == 0):
                     first = max_profit
@@ -255,14 +257,21 @@ def cal_strategy(request):
                     if(first > second):
                         max_loss_expiry = "Unlimited"
 
-                if (j == option_len - 1):
+                if (j == second_last_instrument):
+                    second_last = max_profit
+                if (j == last_instrument):
+                    last = max_profit
+                    if(last > second_last):
+                        max_profit_expiry = "Unlimited"
+                    elif(last < second_last):
+                        max_loss_expiry = "Unlimited"
                     if(isinstance(max_profit_expiry, float)):
                         max_profit_expiry = round(max_profit_expiry, 0)
-
                     if(isinstance(max_loss_expiry, float)):
                         max_loss_expiry = abs(round(max_loss_expiry, 0))
                     elif(isinstance(max_loss_expiry, int)):
                         max_loss_expiry = abs(max_loss_expiry)
+
     if (premium_paid < 0):
         premium_paid = f'Pay {abs(premium_paid)}'
     elif(premium_paid > 0):

@@ -147,7 +147,7 @@ def timed_job():
                 instrument_symbol_a = (a).decode('utf-8')
                 instrument_symbol_b = (b).decode('utf-8')
                 instrument_a_strike = json.loads(r.get("s_"+instrument_symbol_a))
-                instrument_b_strike = json.loads(r.get("s_"+instrument_symbol_b))   
+                instrument_b_strike = json.loads(r.get("s_"+instrument_symbol_b))
 
                 if(instrument_a_strike == instrument_b_strike):
                     call_option_symbol = ""
@@ -184,10 +184,10 @@ def timed_job():
                                 future_price,
                                 instrument_a_strike,
                                 time_to_maturity,
-                                call_option.get("ltp"), 
-                                0.1, 
+                                call_option.get("ltp"),
+                                0.1,
                                 0.25,
-                                0.0001, 
+                                0.0001,
                                 "call"
                                 )
                         r.set("iv_"+instrument_symbol_a[:-2], iv)
@@ -197,10 +197,10 @@ def timed_job():
                                 future_price,
                                 instrument_a_strike,
                                 time_to_maturity,
-                                put_option.get("ltp"), 
-                                0.1, 
+                                put_option.get("ltp"),
+                                0.1,
                                 0.25,
-                                0.0001, 
+                                0.0001,
                                 "put"
                                 )
 
@@ -265,14 +265,14 @@ def timed_job():
             cumilative_call_counter = 0
             cumilative_put_counter = len(max_pain_list)
 
-            total_loss_list = []   
+            total_loss_list = []
             for i, a in enumerate(max_pain_list):
                 strike_call_counter = 0
                 cumilative_call_counter = i
                 cumilative_call = 0
 
                 cumilative_put_counter = i
-                cumilative_put = 0            
+                cumilative_put = 0
                 strike_put_counter = 0  # This ensures a liquid strike is the max pain make it 1
                 while cumilative_call_counter > 0:
                     cumilative_call_counter = cumilative_call_counter - 1
