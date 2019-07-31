@@ -15,6 +15,9 @@ from django.db import connection
 import ast
 import os
 from app.consumers import start_subscription, start_update_option
+from ctypes import cdll
+from ctypes import c_char_p, c_float
+
 
 '''
 s_   : Instrument Options -> To fetch option strikes
@@ -44,6 +47,8 @@ master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY', 'BANKNIFTY']
+
+premium_lib = cdll.LoadLibrary("app/premium.so")
 
 # r.flushall()
 # r.set("access_token", "5a545712a2406c77e87ac2da799248baad2c11f7")
@@ -137,6 +142,7 @@ def cal_strategy(request):
             if (Buy_Call > 0):
                 for _ in it.repeat(None, Buy_Call):
                     premium_paid = premium_paid - (premium * lot_size)
+
             else:
                 for _ in it.repeat(None, Sell_Call):
                     premium_paid = premium_paid + (premium * lot_size)
@@ -179,7 +185,9 @@ def cal_strategy(request):
                         for _ in it.repeat(None, Buy_Call):
                             # ITM Buy Call
                             if(spot_price >= strike_price):
-                                max_return_it = ((spot_price - strike_price) - premium) * lot_size
+                                premium_lib.cal_premium.argtypes = [c_float, c_float, c_float, c_float]
+                                max_return_it = premium_lib.cal_premium(spot_price, strike_price, premium, lot_size)
+                                # max_return_it = ((spot_price - strike_price) - premium) * lot_size
                                 max_return = max_return + max_return_it
                             # OTM Buy Call
                             else:
@@ -276,6 +284,7 @@ def cal_strategy(request):
         premium_paid = f'Get {premium_paid}'
     else:
         premium_paid = f'Pay {abs(round(premium_paid))}'
+
     return Response({
         "max_profit_expiry": max_profit_expiry,
         "max_loss_expiry": max_loss_expiry,
