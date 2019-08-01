@@ -16,7 +16,7 @@ import ast
 import os
 from app.consumers import start_subscription, start_update_option
 from ctypes import cdll
-from ctypes import c_char_p, c_float
+from ctypes import c_float, c_int
 
 
 '''
@@ -180,14 +180,26 @@ def cal_strategy(request):
 
                 # Calls
                 if(spot_symbol_type == "CE"):
-                    max_return = 0
+
+                    premium_lib.cal_premium.argtypes = [
+                        c_int, c_int, c_float, c_float, c_float, c_float]
+                    premium_lib.cal_premium.restype = c_float
+                    max_return = premium_lib.cal_premium(
+                        Buy_Call,
+                        Sell_Call,
+                        spot_price,
+                        strike_price,
+                        premium,
+                        lot_size)
+
+                    '''
                     if (Buy_Call > 0):
                         for _ in it.repeat(None, Buy_Call):
                             # ITM Buy Call
                             if(spot_price >= strike_price):
+                                # max_return_it = ((spot_price - strike_price) - premium) * lot_size
                                 premium_lib.cal_premium.argtypes = [c_float, c_float, c_float, c_float]
                                 max_return_it = premium_lib.cal_premium(spot_price, strike_price, premium, lot_size)
-                                # max_return_it = ((spot_price - strike_price) - premium) * lot_size
                                 max_return = max_return + max_return_it
                             # OTM Buy Call
                             else:
@@ -203,7 +215,7 @@ def cal_strategy(request):
                             else:
                                 max_return_it = (premium) * lot_size
                                 max_return = max_return + max_return_it
-
+                    '''
                     if (r.get("pp_"+spot_symbol_trim) is None):
                         r.set("pp_"+spot_symbol_trim, max_return)
                     else:
