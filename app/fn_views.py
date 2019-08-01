@@ -138,24 +138,31 @@ def cal_strategy(request):
            or Sell_Call is not None and Sell_Call != 0):
             instrument = json.loads(r.get((symbol[0].get("symbol").lower())))
             premium = instrument.get('ltp')
-            if (Buy_Call > 0):
-                for _ in it.repeat(None, Buy_Call):
-                    premium_paid = premium_paid - (premium * lot_size)
 
-            else:
-                for _ in it.repeat(None, Sell_Call):
-                    premium_paid = premium_paid + (premium * lot_size)
+            premium_lib.call_premium_spot.argtypes = [
+                c_int, c_int, c_float, c_float, c_float]
+            premium_lib.call_premium_spot.restype = c_float
+            premium_paid = premium_lib.call_premium_spot(
+                Buy_Call,
+                Sell_Call,
+                premium_paid,
+                premium,
+                lot_size)
 
         if(Buy_Put is not None and Buy_Put != 0
            or Sell_Put is not None and Sell_Put != 0):
             instrument = json.loads(r.get((symbol[1].get("symbol").lower())))
             premium = instrument.get('ltp')
-            if (Buy_Put > 0):
-                for _ in it.repeat(None, Buy_Put):
-                    premium_paid = premium_paid - (premium * lot_size)
-            else:
-                for _ in it.repeat(None, Sell_Put):
-                    premium_paid = premium_paid + (premium * lot_size)
+
+            premium_lib.put_premium_spot.argtypes = [
+                c_int, c_int, c_float, c_float, c_float]
+            premium_lib.put_premium_spot.restype = c_float
+            premium_paid = premium_lib.call_premium_spot(
+                Buy_Put,
+                Sell_Put,
+                premium_paid,
+                premium,
+                lot_size)
 
         # treat every strike as a spot price
         for j, ops in enumerate(list_option):

@@ -1,5 +1,35 @@
 #include <stdio.h>
 
+float put_premium_spot(int Buy_Put, int Sell_Put, float premium_paid, float premium, float lot_size){
+  if (Buy_Put > 0) {
+    int i = 0;
+    for (i=1; i==Buy_Put; i++) {
+        premium_paid = premium_paid - (premium * lot_size);
+    }
+  } else {
+    int i = 0;
+    for (i=1; i==Sell_Put; i++) {
+        premium_paid = premium_paid + (premium * lot_size);
+    }
+  }
+  return premium_paid;
+}
+
+float call_premium_spot(int Buy_Call, int Sell_Call, float premium_paid, float premium, float lot_size){
+  if (Buy_Call > 0) {
+    int i = 0;
+    for (i=1; i== Buy_Call; i++) {
+        premium_paid = premium_paid - (premium * lot_size);
+    }
+  } else {
+    int i = 0;
+    for (i=1; i==Sell_Call; i++) {
+        premium_paid = premium_paid + (premium * lot_size);
+    }
+  }
+  return premium_paid;
+}
+
 float call_premium(int Buy_Call, int Sell_Call, float spot_price, float strike_price, float premium, float lot_size)
 {
   float max_return = 0.0;
