@@ -108,8 +108,7 @@ def cal_strategy(request):
 
     list_option = Full_Quote.objects\
                             .all()\
-                            .filter(symbol__startswith=parent_symbol)\
-                            .order_by('strike_price')
+                            .filter(symbol__startswith=parent_symbol)
     connection.close()
 
     option_len = len(list_option)
@@ -181,10 +180,10 @@ def cal_strategy(request):
                 # Calls
                 if(spot_symbol_type == "CE"):
 
-                    premium_lib.cal_premium.argtypes = [
+                    premium_lib.call_premium.argtypes = [
                         c_int, c_int, c_float, c_float, c_float, c_float]
-                    premium_lib.cal_premium.restype = c_float
-                    max_return = premium_lib.cal_premium(
+                    premium_lib.call_premium.restype = c_float
+                    max_return = premium_lib.call_premium(
                         Buy_Call,
                         Sell_Call,
                         spot_price,
@@ -192,30 +191,6 @@ def cal_strategy(request):
                         premium,
                         lot_size)
 
-                    '''
-                    if (Buy_Call > 0):
-                        for _ in it.repeat(None, Buy_Call):
-                            # ITM Buy Call
-                            if(spot_price >= strike_price):
-                                # max_return_it = ((spot_price - strike_price) - premium) * lot_size
-                                premium_lib.cal_premium.argtypes = [c_float, c_float, c_float, c_float]
-                                max_return_it = premium_lib.cal_premium(spot_price, strike_price, premium, lot_size)
-                                max_return = max_return + max_return_it
-                            # OTM Buy Call
-                            else:
-                                max_return_it = (-premium) * lot_size
-                                max_return = max_return + max_return_it
-                    else:
-                        for _ in it.repeat(None, Sell_Call):
-                            # ITM Sell Call
-                            if(spot_price >= strike_price):
-                                max_return_it = ((strike_price - spot_price) + premium) * lot_size
-                                max_return = max_return + max_return_it
-                            # OTM Sell Call
-                            else:
-                                max_return_it = (premium) * lot_size
-                                max_return = max_return + max_return_it
-                    '''
                     if (r.get("pp_"+spot_symbol_trim) is None):
                         r.set("pp_"+spot_symbol_trim, max_return)
                     else:
@@ -232,27 +207,17 @@ def cal_strategy(request):
 
                 # Puts
                 if(spot_symbol_type == "PE"):
-                    max_return = 0
-                    if (Buy_Put > 0):
-                        for _ in it.repeat(None, Buy_Put):
-                            # ITM Buy Put
-                            if(spot_price <= strike_price):
-                                max_return_it = ((strike_price - spot_price) - premium) * lot_size
-                                max_return = max_return + max_return_it
-                            # OTM Buy Put
-                            else:
-                                max_return_it = (-premium) * lot_size
-                                max_return = max_return + max_return_it
-                    else:
-                        for _ in it.repeat(None, Sell_Put):
-                            # ITM Sell Put
-                            if(spot_price <= strike_price):
-                                max_return_it = ((spot_price - strike_price) + premium) * lot_size
-                                max_return = max_return + max_return_it
-                            # OTM Sell Put
-                            else:
-                                max_return_it = (premium) * lot_size
-                                max_return = max_return + max_return_it
+
+                    premium_lib.put_premium.argtypes = [
+                        c_int, c_int, c_float, c_float, c_float, c_float]
+                    premium_lib.put_premium.restype = c_float
+                    max_return = premium_lib.put_premium(
+                        Buy_Put,
+                        Sell_Put,
+                        spot_price,
+                        strike_price,
+                        premium,
+                        lot_size)
 
                     if (r.get("pp_"+spot_symbol_trim) is None):
                         r.set("pp_"+spot_symbol_trim, max_return)
