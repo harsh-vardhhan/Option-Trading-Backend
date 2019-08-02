@@ -45,3 +45,9 @@ class Expiry_Date(models.Model):
     expiry_date = models.CharField(max_length=40)
     label_date = models.CharField(max_length=40)
     future_date = models.CharField(max_length=40)
+
+
+class Chart(models.Model):
+    symbol = models.CharField(max_length=40)
+    strike_price = models.FloatField(max_length=40)
+    profit = models.FloatField(max_length=40)
