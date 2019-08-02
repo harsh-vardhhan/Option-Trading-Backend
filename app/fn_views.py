@@ -51,7 +51,7 @@ symbols = ['NIFTY', 'BANKNIFTY']
 
 # premium_lib = cdll.LoadLibrary("app/premium.so")
 
-premium_lib = cdll.LoadLibrary(os.path.abspath("app/premium.so"))
+premium_lib = cdll.LoadLibrary(os.path.abspath("premium.so"))
 # r.flushall()
 # r.set("access_token", "5a545712a2406c77e87ac2da799248baad2c11f7")
 
