@@ -171,7 +171,7 @@ def cal_strategy(request):
 
             buy_sell_strike.append(Put_Symbol_Strike)
 
-           premium_lib.put_premium_spot.argtypes = [
+            premium_lib.put_premium_spot.argtypes = [
                 c_int, c_int, c_float, c_float, c_float]
             premium_lib.put_premium_spot.restype = c_float
             premium_paid = premium_lib.call_premium_spot(
