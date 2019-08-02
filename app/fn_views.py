@@ -15,7 +15,7 @@ from django.db import connection
 import ast
 import os
 from app.consumers import start_subscription, start_update_option
-from ctypes import cdll
+from ctypes import CDLL
 from ctypes import c_float, c_int
 
 
@@ -51,8 +51,10 @@ symbols = ['NIFTY', 'BANKNIFTY']
 
 # premium_lib = cdll.LoadLibrary("app/premium.so")
 
-me = os.path.abspath(os.path.dirname(__file__))
-premium_lib = cdll.LoadLibrary(os.path.join(me, "app/premium.so"))
+libc = os.path.abspath(
+    os.path.join(os.path.dirname(__file__), "premium.so"))
+
+premium_lib = CDLL(libc)
 
 # r.flushall()
 # r.set("access_token", "5a545712a2406c77e87ac2da799248baad2c11f7")
