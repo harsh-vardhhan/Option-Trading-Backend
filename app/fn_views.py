@@ -126,11 +126,8 @@ def cal_strategy(request):
     max_loss_expiry = 100000000000000000000000
     max_loss_numerical = 0
 
-    def obj_dict(obj):
-        return obj.__dict__
-
     def toJson(func):
-        return json.loads(json.dumps(func, default=obj_dict))
+        return json.loads(json.dumps(func))
 
     for i, symbol in enumerate(symbols):
 
@@ -727,7 +724,7 @@ def get_full_quotes(request):
 
     def toJson(func):
         return json.loads(json.dumps(func, default=obj_dict))
-    store_dates()
+
     request_data = json.loads(json.dumps(request.data))
     # access_token = request_data['accessToken']
     # indices = request_data['indices']
@@ -735,8 +732,15 @@ def get_full_quotes(request):
     expiry_date = request_data['expiry_date']
     if (expiry_date == "0"):
         expiry_date = "19AUG"
-    dates = list(Expiry_Date.objects.all())
-    connection.close()
+
+    dates = []
+    date_one = {
+        "upstox_date": "19AUG",
+        "expiry_date": str(date(2019, 8, 19)),
+        "label_date": "19 AUG (Monthly)",
+        "future_date": "19AUG"
+    }
+    dates.append(date_one)
     '''
     def create_session(request):
         upstox = Upstox(api_key, access_token)
