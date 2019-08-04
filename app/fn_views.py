@@ -156,14 +156,14 @@ def cal_strategy(request):
 
             buy_sell_strike.append(Call_Symbol_Strike)
             premium_lib.call_premium_spot.argtypes = [
-                c_int, c_int, c_float, c_float, c_float]
+                c_int, c_int, c_float, c_float]
             premium_lib.call_premium_spot.restype = c_float
-            premium_paid = premium_lib.call_premium_spot(
+            new_premium_paid = premium_lib.call_premium_spot(
                 Buy_Call,
                 Sell_Call,
-                premium_paid,
                 premium,
                 lot_size)
+            premium_paid = premium_paid + new_premium_paid
 
         if(Buy_Put is not None and Buy_Put != 0
            or Sell_Put is not None and Sell_Put != 0):
@@ -175,12 +175,12 @@ def cal_strategy(request):
             premium_lib.put_premium_spot.argtypes = [
                 c_int, c_int, c_float, c_float, c_float]
             premium_lib.put_premium_spot.restype = c_float
-            premium_paid = premium_lib.call_premium_spot(
+            new_premium_paid = premium_lib.call_premium_spot(
                 Buy_Put,
                 Sell_Put,
-                premium_paid,
                 premium,
                 lot_size)
+            premium_paid = premium_paid + new_premium_paid
 
         # treat every strike as a spot price
         for j, ops in enumerate(list_option):
