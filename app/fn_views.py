@@ -321,35 +321,52 @@ def cal_strategy(request):
                 # Mini Chart
                 if(spot_symbol_type == "PE"):
                     if j == 1:
+                        '''
                         mini_chart = Chart(
                             symbol=spot_symbol_trim,
                             strike_price=round(spot_price),
                             profit=r.get("pp_"+spot_symbol_trim)
                                     .decode("utf-8")
                         )
+                        '''
+                        mini_chart = {
+                            "symbol": spot_symbol_trim,
+                            "strike_price": round(spot_price),
+                            "profit": r.get("pp_"+spot_symbol_trim)
+                                       .decode("utf-8")
+                        }
                         mini_analysis_chart.append(toJson(mini_chart))
                     for strike_symbol in buy_sell_strike:
                         if (spot_symbol_trim == strike_symbol):
-                            mini_chart = Chart(
-                                symbol=spot_symbol_trim,
-                                strike_price=round(spot_price),
-                                profit=r.get("pp_"+spot_symbol_trim)
-                                        .decode("utf-8")
-                            )
+                            mini_chart = {
+                                "symbol": spot_symbol_trim,
+                                "strike_price": round(spot_price),
+                                "profit": r.get("pp_"+spot_symbol_trim)
+                                           .decode("utf-8")
+                            }
                             mini_analysis_chart.append(toJson(mini_chart))
                     if j == last_instrument:
-                        mini_chart = Chart(
-                            symbol=spot_symbol_trim,
-                            strike_price=round(spot_price),
-                            profit=r.get("pp_"+spot_symbol_trim)
-                                    .decode("utf-8")
-                        )
+                        mini_chart = {
+                            "symbol": spot_symbol_trim,
+                            "strike_price": round(spot_price),
+                            "profit": r.get("pp_"+spot_symbol_trim)
+                                       .decode("utf-8")
+                        }
                         mini_analysis_chart.append(toJson(mini_chart))
 
+                    '''
                     chart = Chart(
                         symbol=spot_symbol_trim,
                         strike_price=spot_price,
                         profit=r.get("pp_"+spot_symbol_trim).decode("utf-8"))
+                    '''
+
+                    chart = {
+                        "symbol": spot_symbol_trim,
+                        "strike_price": spot_price,
+                        "profit": r.get("pp_"+spot_symbol_trim).decode("utf-8")
+                    }
+
                     analysis_chart.append(toJson(chart))
 
     if (premium_paid >= 0):
