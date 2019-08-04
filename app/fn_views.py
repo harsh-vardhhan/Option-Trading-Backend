@@ -3,7 +3,7 @@ from rest_framework.views import Response
 from upstox_api.api import Session, Upstox
 import json
 import itertools as it
-from app.models import Instrument, Full_Quote, Expiry_Date, Chart
+from app.models import Instrument, Full_Quote, Expiry_Date
 from datetime import datetime, date
 import calendar
 from dateutil import relativedelta
@@ -321,14 +321,6 @@ def cal_strategy(request):
                 # Mini Chart
                 if(spot_symbol_type == "PE"):
                     if j == 1:
-                        '''
-                        mini_chart = Chart(
-                            symbol=spot_symbol_trim,
-                            strike_price=round(spot_price),
-                            profit=r.get("pp_"+spot_symbol_trim)
-                                    .decode("utf-8")
-                        )
-                        '''
                         mini_chart = {
                             "symbol": spot_symbol_trim,
                             "strike_price": round(spot_price),
@@ -353,13 +345,6 @@ def cal_strategy(request):
                                        .decode("utf-8")
                         }
                         mini_analysis_chart.append(toJson(mini_chart))
-
-                    '''
-                    chart = Chart(
-                        symbol=spot_symbol_trim,
-                        strike_price=spot_price,
-                        profit=r.get("pp_"+spot_symbol_trim).decode("utf-8"))
-                    '''
 
                     chart = {
                         "symbol": spot_symbol_trim,
@@ -651,7 +636,13 @@ def save_full_quotes_db(request):
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
     request_data = json.loads(json.dumps(request.data))
 
+    def obj_dict(obj):
+        return obj.__dict__
+
+    def toJson(func):
+        return json.loads(json.dumps(func, default=obj_dict))
     # create_session method exclusively while developing in online mode
+
     def create_session():
         upstox = Upstox(api_key, request_data['accessToken'])
         return upstox
@@ -681,30 +672,30 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                             option = json.loads(symbol_decoded)
                             ask = (option['asks'][0]).get('price')
                             bid = (option['bids'][0]).get('price')
-                            full_quote_obj = Full_Quote(
-                                strike_price=ops.strike_price,
-                                exchange=option['exchange'],
-                                symbol=option['symbol'],
-                                ltp=option['ltp'],
-                                close=option['close'],
-                                open=option['open'],
-                                high=option['high'],
-                                low=option['low'],
-                                vtt=option['vtt'],
-                                atp=option['atp'],
-                                oi=option['oi'],
-                                spot_price=option['spot_price'],
-                                total_buy_qty=option['total_buy_qty'],
-                                total_sell_qty=option['total_sell_qty'],
-                                lower_circuit=option['lower_circuit'],
-                                upper_circuit=option['upper_circuit'],
-                                yearly_low=option['yearly_low'],
-                                yearly_high=option['yearly_high'],
-                                ltt=option['ltt'],
-                                bid=bid,
-                                ask=ask
-                            )
-                            full_quotes.append(full_quote_obj)
+                            full_quote_obj = {
+                                "strike_price": ops.strike_price,
+                                "exchange": option['exchange'],
+                                "symbol": option['symbol'],
+                                "ltp": option['ltp'],
+                                "close": option['close'],
+                                "open": option['open'],
+                                "high": option['high'],
+                                "low": option['low'],
+                                "vtt": option['vtt'],
+                                "atp": option['atp'],
+                                "oi": option['oi'],
+                                "spot_price": option['spot_price'],
+                                "total_buy_qty": option['total_buy_qty'],
+                                "total_sell_qty": option['total_sell_qty'],
+                                "lower_circuit": option['lower_circuit'],
+                                "upper_circuit": option['upper_circuit'],
+                                "yearly_low": option['yearly_low'],
+                                "yearly_high": option['yearly_high'],
+                                "ltt": option['ltt'],
+                                "bid": bid,
+                                "ask": ask
+                            }
+                            full_quotes.append(toJson(full_quote_obj))
     return full_quotes
 
 
@@ -763,22 +754,22 @@ def get_full_quotes(request):
         theta_put = 0
 
         for a, b in it.combinations(list_options, 2):
-            if (a.strike_price == b.strike_price):
+            if (a.get("strike_price") == b.get("strike_price")):
                 # arrange option pair always in CE and PE order
 
-                trimmed_symbol = (a.symbol.lower())[:-2]
+                trimmed_symbol = (a.get("symbol").lower())[:-2]
                 if r.get("g_"+trimmed_symbol) is not None:
 
                     gamma = r.get("g_"+trimmed_symbol).decode('utf-8')
                     vega = r.get("v_"+trimmed_symbol).decode('utf-8')
                     iv = r.get("iv_" + trimmed_symbol).decode("utf-8")
 
-                    if (a.symbol[-2:] == 'CE'):
+                    if (a.get("symbol")[-2:] == 'CE'):
                         delta_call = r.get("dc_"+trimmed_symbol)\
                                       .decode('utf-8')
                         theta_call = r.get("tc_"+trimmed_symbol)\
                                       .decode('utf-8')
-                        option_pair = (a, b, a.strike_price, iv,
+                        option_pair = (a, b, a.get("strike_price"), iv,
                                        gamma,
                                        vega,
                                        delta_call,
@@ -789,7 +780,7 @@ def get_full_quotes(request):
                     else:
                         delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
                         theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
-                        option_pair = (b, a, a.strike_price, iv,
+                        option_pair = (b, a, a.get("strike_price"), iv,
                                        gamma,
                                        vega,
                                        delta_call,
