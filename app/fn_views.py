@@ -155,6 +155,8 @@ def cal_strategy(request):
             premium = instrument.get('ltp')
 
             buy_sell_strike.append(Call_Symbol_Strike)
+
+            # Calcualte new premium
             premium_lib.call_premium_spot.argtypes = [
                 c_int, c_int, c_float, c_float]
             premium_lib.call_premium_spot.restype = c_float
@@ -163,7 +165,14 @@ def cal_strategy(request):
                 Sell_Call,
                 premium,
                 lot_size)
-            premium_paid = premium_paid + new_premium_paid
+
+            # Add to previous premium
+            premium_lib.premium_paid.argtypes = [
+                c_float, c_float]
+            premium_lib.premium_paid.restype = c_float
+            premium_paid = premium_lib.premium_paid(
+                premium_paid,
+                new_premium_paid)
 
         if(Buy_Put is not None and Buy_Put != 0
            or Sell_Put is not None and Sell_Put != 0):
@@ -172,6 +181,7 @@ def cal_strategy(request):
 
             buy_sell_strike.append(Put_Symbol_Strike)
 
+            # Calcualte new premium
             premium_lib.put_premium_spot.argtypes = [
                 c_int, c_int, c_float, c_float, c_float]
             premium_lib.put_premium_spot.restype = c_float
@@ -180,7 +190,14 @@ def cal_strategy(request):
                 Sell_Put,
                 premium,
                 lot_size)
-            premium_paid = premium_paid + new_premium_paid
+
+            # Add to previous premium
+            premium_lib.premium_paid.argtypes = [
+                c_float, c_float]
+            premium_lib.premium_paid.restype = c_float
+            premium_paid = premium_lib.premium_paid(
+                premium_paid,
+                new_premium_paid)
 
         # treat every strike as a spot price
         for j, ops in enumerate(list_option):
@@ -220,7 +237,14 @@ def cal_strategy(request):
                     else:
                         old_max_return = json.loads(
                             r.get("pp_"+spot_symbol_trim))
-                        new_max_return = max_return + old_max_return
+
+                        premium_lib.new_max_return.argtypes = [
+                            c_float, c_float]
+                        premium_lib.new_max_return.restype = c_float
+                        new_max_return = premium_lib.new_max_return(
+                            max_return,
+                            old_max_return)
+
                         r.set("pp_"+spot_symbol_trim, new_max_return)
 
             if(Buy_Put is not None and Buy_Put != 0
@@ -248,7 +272,13 @@ def cal_strategy(request):
                     else:
                         old_max_return = json.loads(
                             r.get("pp_" + spot_symbol_trim))
-                        new_max_return = max_return + old_max_return
+
+                        premium_lib.new_max_return.argtypes = [
+                            c_float, c_float]
+                        premium_lib.new_max_return.restype = c_float
+                        new_max_return = premium_lib.new_max_return(
+                            max_return,
+                            old_max_return)
                         r.set("pp_"+spot_symbol_trim, new_max_return)
 
             # last iteration

@@ -103,6 +103,15 @@ float put_premium(int Buy_Put, int Sell_Put, float spot_price, float strike_pric
   return max_return;
 }
 
+float new_max_return(float max_return, float old_max_return) {
+  float new_max_return_val = max_return + old_max_return;
+  return new_max_return_val;
+}
+
+float premium_paid(float premium_paid, float new_premium_paid) {
+  float premium_paid_val = premium_paid + new_premium_paid;
+  return premium_paid_val;
+}
 
 float main(void)
 {
