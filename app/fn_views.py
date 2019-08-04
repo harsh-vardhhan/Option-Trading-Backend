@@ -359,19 +359,17 @@ def cal_strategy(request):
     else:
         premium_paid = f'Pay {abs(round(premium_paid))}'
 
-    def percentage(percent, whole):
-        return (percent * whole) / 100.0
+    premium_lib.max_loss_numerical_graph.argtypes = [
+        c_float]
+    premium_lib.max_loss_numerical_graph.restype = c_float
+    max_loss_numerical_graph = premium_lib.max_loss_numerical_graph(
+        max_loss_numerical)
 
-    max_loss_numerical_graph = 0
-    if (max_loss_numerical < 0):
-        max_loss_numerical_graph = max_loss_numerical - percentage(
-            40, (-max_loss_numerical))
-    if (max_loss_numerical > 0):
-        max_loss_numerical_graph = max_loss_numerical - percentage(
-            40, (max_loss_numerical))
-
-    max_profit_numerical_graph = max_profit_numerical + percentage(
-        40, (max_profit_numerical))
+    premium_lib.max_profit_numerical_graph.argtypes = [
+        c_float]
+    premium_lib.max_profit_numerical_graph.restype = c_float
+    max_profit_numerical_graph = premium_lib.max_profit_numerical_graph(
+        max_profit_numerical)
 
     return Response({
         "max_profit_expiry": max_profit_expiry,

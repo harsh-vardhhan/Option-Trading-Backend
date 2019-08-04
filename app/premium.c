@@ -117,3 +117,18 @@ float main(void)
 {
   return 0.0;
 }
+
+float max_loss_numerical_graph(float max_loss_numerical) {
+  if (max_loss_numerical < 0) {
+    float max_loss_numerical_graph_val = max_loss_numerical - ((40 * (-max_loss_numerical)) / 100.0);
+    return max_loss_numerical_graph_val;
+  } else {
+    float max_loss_numerical_graph_val = max_loss_numerical - ((40 * max_loss_numerical) / 100.0);
+    return max_loss_numerical_graph_val;
+  }
+}
+
+float max_profit_numerical_graph(float max_profit_numerical) {
+  float max_profit_numerical_graph_val = max_profit_numerical + ((40 * max_profit_numerical) / 100.0);
+  return max_profit_numerical_graph_val;
+}
