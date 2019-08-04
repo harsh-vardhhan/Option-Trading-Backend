@@ -48,6 +48,7 @@ class Expiry_Date(models.Model):
 
 
 class Chart(models.Model):
+    _slots_ = ['symbol', 'strike_price', 'profit']
     symbol = models.CharField(max_length=40)
     strike_price = models.FloatField(max_length=40)
     profit = models.FloatField(max_length=40)

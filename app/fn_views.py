@@ -747,7 +747,7 @@ def get_full_quotes(request):
 
         for a, b in it.combinations(list_options, 2):
             if (a.strike_price == b.strike_price):
-                    # arrange option pair always in CE and PE order
+                # arrange option pair always in CE and PE order
 
                 trimmed_symbol = (a.symbol.lower())[:-2]
                 if r.get("g_"+trimmed_symbol) is not None:
