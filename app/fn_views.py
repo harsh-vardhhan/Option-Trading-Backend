@@ -631,11 +631,8 @@ def save_full_quotes_db(request):
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
     request_data = json.loads(json.dumps(request.data))
 
-    def obj_dict(obj):
-        return obj.__dict__
-
     def toJson(func):
-        return json.loads(json.dumps(func, default=obj_dict))
+        return json.loads(json.dumps(func))
     # create_session method exclusively while developing in online mode
 
     def create_session():
@@ -719,11 +716,8 @@ def store_dates():
 @api_view(['POST'])
 def get_full_quotes(request):
 
-    def obj_dict(obj):
-        return obj.__dict__
-
     def toJson(func):
-        return json.loads(json.dumps(func, default=obj_dict))
+        return json.loads(json.dumps(func))
 
     request_data = json.loads(json.dumps(request.data))
     # access_token = request_data['accessToken']
