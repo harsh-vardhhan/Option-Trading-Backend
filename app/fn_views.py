@@ -126,11 +126,8 @@ def cal_strategy(request):
     max_loss_expiry = 100000000000000000000000
     max_loss_numerical = 0
 
-    def obj_dict(obj):
-        return obj.__dict__
-
-    def toJson(func):
-        return json.loads(json.dumps(func, default=obj_dict))
+    def toJson(self):
+        return {key: getattr(self, key, None) for key in self.__slots__}
 
     for i, symbol in enumerate(symbols):
 
@@ -352,7 +349,6 @@ def cal_strategy(request):
                         profit=r.get("pp_"+spot_symbol_trim)
                                 .decode("utf-8")
                     )
-
                     analysis_chart.append(toJson(chart))
 
     if (premium_paid >= 0):
