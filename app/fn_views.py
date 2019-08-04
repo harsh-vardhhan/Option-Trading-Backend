@@ -629,15 +629,27 @@ def save_full_quotes_db(request):
 # TODO Schedule this function
 # TODO Perform IV Calculations here
 def get_full_quotes_cache(request, symbol_req, expiry_date_req):
-    request_data = json.loads(json.dumps(request.data))
 
     def toJson(func):
         return json.loads(json.dumps(func))
-    # create_session method exclusively while developing in online mode
 
+    expiry_dates = []
+    date_one = {
+        "upstox_date": "19AUG",
+        "expiry_date": str(date(2019, 8, 19)),
+        "label_date": "19 AUG (Monthly)",
+        "future_date": "19AUG"
+    }
+    expiry_dates.append(date_one)
+
+    # create_session method exclusively while developing in online mode
+    '''
+    request_data = toJson(request.data)
     def create_session():
         upstox = Upstox(api_key, request_data['accessToken'])
         return upstox
+    '''
+
     searched_symbol = symbol_req + expiry_date_req
     list_option = Full_Quote.objects\
                             .all()\
@@ -645,49 +657,47 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                             .order_by('strike_price')
     connection.close()
     full_quotes = []
-    for symbol in symbols:
-        for ops in list_option:
-            # This has been done to differentiate between NIFTY and BANKNIFTY
-            symbol_len = len(symbol)
-            symbol_cache = ops.symbol[:symbol_len]
-            if(symbol_cache.upper() == symbol):
-                # This is to fetch Monthly Options only
-                trim_symbol = ops.symbol[symbol_len:]
-                expiry_dates = list(Expiry_Date.objects.all())
-                for expiry_date in expiry_dates:
-                    symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
-                    if (symbol_date.upper() == expiry_date.upstox_date):
-                        uppercase_symbol = ops.symbol
-                        symbol_key = r.get(uppercase_symbol.lower())
-                        if (symbol_key is not None):
-                            symbol_decoded = symbol_key.decode('utf-8')
-                            option = json.loads(symbol_decoded)
-                            ask = (option['asks'][0]).get('price')
-                            bid = (option['bids'][0]).get('price')
-                            full_quote_obj = {
-                                "strike_price": ops.strike_price,
-                                "exchange": option['exchange'],
-                                "symbol": option['symbol'],
-                                "ltp": option['ltp'],
-                                "close": option['close'],
-                                "open": option['open'],
-                                "high": option['high'],
-                                "low": option['low'],
-                                "vtt": option['vtt'],
-                                "atp": option['atp'],
-                                "oi": option['oi'],
-                                "spot_price": option['spot_price'],
-                                "total_buy_qty": option['total_buy_qty'],
-                                "total_sell_qty": option['total_sell_qty'],
-                                "lower_circuit": option['lower_circuit'],
-                                "upper_circuit": option['upper_circuit'],
-                                "yearly_low": option['yearly_low'],
-                                "yearly_high": option['yearly_high'],
-                                "ltt": option['ltt'],
-                                "bid": bid,
-                                "ask": ask
-                            }
-                            full_quotes.append(toJson(full_quote_obj))
+    for ops in list_option:
+        # This has been done to differentiate between NIFTY and BANKNIFTY
+        symbol_len = len(symbol_req)
+        symbol_cache = ops.symbol[:symbol_len]
+        if(symbol_cache.upper() == symbol_req):
+            # This is to fetch Monthly Options only
+            trim_symbol = ops.symbol[symbol_len:]
+            for expiry_date in expiry_dates:
+                symbol_date = trim_symbol[:len(expiry_date.get("upstox_date"))]
+                if (symbol_date.upper() == expiry_date.get("upstox_date")):
+                    uppercase_symbol = ops.symbol
+                    symbol_key = r.get(uppercase_symbol.lower())
+                    if (symbol_key is not None):
+                        symbol_decoded = symbol_key.decode('utf-8')
+                        option = json.loads(symbol_decoded)
+                        ask = (option['asks'][0]).get('price')
+                        bid = (option['bids'][0]).get('price')
+                        full_quote_obj = {
+                            "strike_price": ops.strike_price,
+                            "exchange": option['exchange'],
+                            "symbol": option['symbol'],
+                            "ltp": option['ltp'],
+                            "close": option['close'],
+                            "open": option['open'],
+                            "high": option['high'],
+                            "low": option['low'],
+                            "vtt": option['vtt'],
+                            "atp": option['atp'],
+                            "oi": option['oi'],
+                            "spot_price": option['spot_price'],
+                            "total_buy_qty": option['total_buy_qty'],
+                            "total_sell_qty": option['total_sell_qty'],
+                            "lower_circuit": option['lower_circuit'],
+                            "upper_circuit": option['upper_circuit'],
+                            "yearly_low": option['yearly_low'],
+                            "yearly_high": option['yearly_high'],
+                            "ltt": option['ltt'],
+                            "bid": bid,
+                            "ask": ask
+                        }
+                        full_quotes.append(toJson(full_quote_obj))
     return full_quotes
 
 
