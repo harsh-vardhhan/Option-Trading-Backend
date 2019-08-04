@@ -319,6 +319,7 @@ def cal_strategy(request):
                         max_loss_expiry = abs(max_loss_expiry)
 
                 # Mini Chart
+                '''
                 if(spot_symbol_type == "PE"):
                     if j == 1:
                         mini_chart = Chart(
@@ -351,6 +352,7 @@ def cal_strategy(request):
                         strike_price=spot_price,
                         profit=r.get("pp_"+spot_symbol_trim).decode("utf-8"))
                     analysis_chart.append(toJson(chart))
+                '''
 
     if (premium_paid >= 0):
         premium_paid = f'Get {premium_paid}'
