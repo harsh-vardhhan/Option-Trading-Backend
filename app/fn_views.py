@@ -3,7 +3,7 @@ from rest_framework.views import Response
 from upstox_api.api import Session, Upstox
 import json
 import itertools as it
-from app.models import Instrument, Full_Quote, Expiry_Date
+from app.models import Instrument, Full_Quote, Expiry_Date, Chart
 from datetime import datetime, date
 import calendar
 from dateutil import relativedelta
@@ -321,36 +321,37 @@ def cal_strategy(request):
                 # Mini Chart
                 if(spot_symbol_type == "PE"):
                     if j == 1:
-                        mini_chart = {
-                            "symbol": spot_symbol_trim,
-                            "strike_price": round(spot_price),
-                            "profit": r.get("pp_"+spot_symbol_trim)
-                                       .decode("utf-8")
-                        }
+                        mini_chart = Chart(
+                            symbol=spot_symbol_trim,
+                            strike_price=round(spot_price),
+                            profit=r.get("pp_"+spot_symbol_trim)
+                                    .decode("utf-8")
+                        )
                         mini_analysis_chart.append(toJson(mini_chart))
                     for strike_symbol in buy_sell_strike:
                         if (spot_symbol_trim == strike_symbol):
-                            mini_chart = {
-                                "symbol": spot_symbol_trim,
-                                "strike_price": round(spot_price),
-                                "profit": r.get("pp_"+spot_symbol_trim)
-                                           .decode("utf-8")
-                            }
+                            mini_chart = Chart(
+                                symbol=spot_symbol_trim,
+                                strike_price=round(spot_price),
+                                profit=r.get("pp_"+spot_symbol_trim)
+                                        .decode("utf-8")
+                            )
                             mini_analysis_chart.append(toJson(mini_chart))
                     if j == last_instrument:
-                        mini_chart = {
-                            "symbol": spot_symbol_trim,
-                            "strike_price": round(spot_price),
-                            "profit": r.get("pp_"+spot_symbol_trim)
-                                       .decode("utf-8")
-                        }
+                        mini_chart = Chart(
+                            symbol=spot_symbol_trim,
+                            strike_price=round(spot_price),
+                            profit=r.get("pp_"+spot_symbol_trim)
+                                    .decode("utf-8")
+                        )
                         mini_analysis_chart.append(toJson(mini_chart))
 
-                    chart = {
-                        "symbol": spot_symbol_trim,
-                        "strike_price": spot_price,
-                        "profit": r.get("pp_"+spot_symbol_trim).decode("utf-8")
-                    }
+                    chart = Chart(
+                        symbol=spot_symbol_trim,
+                        strike_price=round(spot_price),
+                        profit=r.get("pp_"+spot_symbol_trim)
+                                .decode("utf-8")
+                    )
 
                     analysis_chart.append(toJson(chart))
 
