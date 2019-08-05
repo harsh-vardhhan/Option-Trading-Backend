@@ -15,8 +15,7 @@ from django.db import connection
 import ast
 import os
 from app.consumers import start_subscription, start_update_option
-from ctypes import cdll
-from ctypes import c_float, c_int
+from ctypes import c_float, c_int, cdll
 
 
 '''
@@ -681,8 +680,7 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                             "high": option['high'],
                             "low": option['low'],
                             "vtt": option['vtt'],
-                            "atp": option['atp'
-                            ],
+                            "atp": option['atp'],
                             "oi": option['oi'],
                             "spot_price": option['spot_price'],
                             "total_buy_qty": option['total_buy_qty'],

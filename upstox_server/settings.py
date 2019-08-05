@@ -34,7 +34,6 @@ ALLOWED_HOSTS = ['*']
 # Application definition
 
 INSTALLED_APPS = [
-    "scout_apm.django",
     "app",
     "background_task",
     "django.contrib.admin",
@@ -47,13 +46,8 @@ INSTALLED_APPS = [
     "rest_framework_swagger"
 ]
 
-SCOUT_MONITOR = True
-SCOUT_KEY = "[ckVuP28u98MSeMhaJpgl]"
-SCOUT_NAME = "TrakBit"
 
 MIDDLEWARE = [
-    "scout_apm.django.middleware.MiddlewareTimingMiddleware",
-    "scout_apm.django.middleware.ViewTimingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
