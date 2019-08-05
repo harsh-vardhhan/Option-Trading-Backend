@@ -126,9 +126,6 @@ def cal_strategy(request):
     max_loss_expiry = 100000000000000000000000
     max_loss_numerical = 0
 
-    def toJson(func):
-        return json.loads(json.dumps(func))
-
     for i, symbol in enumerate(symbols):
 
         second_last = 0
@@ -324,7 +321,7 @@ def cal_strategy(request):
                             "profit": r.get("pp_"+spot_symbol_trim)
                                        .decode("utf-8")
                         }
-                        mini_analysis_chart.append(toJson(mini_chart))
+                        mini_analysis_chart.append(mini_chart)
                     for strike_symbol in buy_sell_strike:
                         if (spot_symbol_trim == strike_symbol):
                             mini_chart = {
@@ -333,7 +330,7 @@ def cal_strategy(request):
                                 "profit": r.get("pp_"+spot_symbol_trim)
                                            .decode("utf-8")
                             }
-                            mini_analysis_chart.append(toJson(mini_chart))
+                            mini_analysis_chart.append(mini_chart)
                     if j == last_instrument:
                         mini_chart = {
                             "symbol": spot_symbol_trim,
@@ -341,7 +338,7 @@ def cal_strategy(request):
                             "profit": r.get("pp_"+spot_symbol_trim)
                                        .decode("utf-8")
                         }
-                        mini_analysis_chart.append(toJson(mini_chart))
+                        mini_analysis_chart.append(mini_chart)
 
                     chart = {
                         "symbol": spot_symbol_trim,
@@ -349,7 +346,7 @@ def cal_strategy(request):
                         "profit": r.get("pp_"+spot_symbol_trim).decode("utf-8")
                     }
 
-                    analysis_chart.append(toJson(chart))
+                    analysis_chart.append(chart)
 
     if (premium_paid >= 0):
         premium_paid = f'Get {premium_paid}'
@@ -698,7 +695,7 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                             "bid": bid,
                             "ask": ask
                         }
-                        full_quotes.append(toJson(full_quote_obj))
+                        full_quotes.append(full_quote_obj)
     return full_quotes
 
 
