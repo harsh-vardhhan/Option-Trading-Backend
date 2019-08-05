@@ -52,6 +52,8 @@ SCOUT_KEY = "[ckVuP28u98MSeMhaJpgl]"
 SCOUT_NAME = "TrakBit"
 
 MIDDLEWARE = [
+    "scout_apm.django.middleware.MiddlewareTimingMiddleware",
+    "scout_apm.django.middleware.ViewTimingMiddleware",
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
