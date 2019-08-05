@@ -17,6 +17,9 @@ import os
 from app.consumers import start_subscription, start_update_option
 from ctypes import cdll
 from ctypes import c_float, c_int
+from pyinstrument import Profiler
+
+profiler = Profiler()
 
 
 '''
@@ -99,6 +102,7 @@ def get_redirect_url(request):
 
 @api_view(['POST'])
 def cal_strategy(request):
+    profiler.start()
     request_data = json.loads(json.dumps(request.data))
     symbols = request_data['symbol']
     parent_symbol = request_data['parent_symbol']
@@ -316,7 +320,6 @@ def cal_strategy(request):
                         max_loss_expiry = abs(max_loss_expiry)
 
                 # Mini Chart
-                '''
                 if(spot_symbol_type == "PE"):
                     if j == 1:
                         mini_chart = {
@@ -351,7 +354,6 @@ def cal_strategy(request):
                     }
 
                     analysis_chart.append(toJson(chart))
-                '''
 
     if (premium_paid >= 0):
         premium_paid = f'Get {premium_paid}'
@@ -370,6 +372,8 @@ def cal_strategy(request):
     max_profit_numerical_graph = premium_lib.max_profit_numerical_graph(
         max_profit_numerical)
 
+    profiler.stop()
+    print(profiler.output_text(unicode=True, color=True))
     return Response({
         "max_profit_expiry": max_profit_expiry,
         "max_loss_expiry": max_loss_expiry,
