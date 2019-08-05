@@ -316,6 +316,7 @@ def cal_strategy(request):
                         max_loss_expiry = abs(max_loss_expiry)
 
                 # Mini Chart
+                '''
                 if(spot_symbol_type == "PE"):
                     if j == 1:
                         mini_chart = {
@@ -350,6 +351,7 @@ def cal_strategy(request):
                     }
 
                     analysis_chart.append(toJson(chart))
+                '''
 
     if (premium_paid >= 0):
         premium_paid = f'Get {premium_paid}'
@@ -684,7 +686,8 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
                             "high": option['high'],
                             "low": option['low'],
                             "vtt": option['vtt'],
-                            "atp": option['atp'],
+                            "atp": option['atp'
+                            ],
                             "oi": option['oi'],
                             "spot_price": option['spot_price'],
                             "total_buy_qty": option['total_buy_qty'],
