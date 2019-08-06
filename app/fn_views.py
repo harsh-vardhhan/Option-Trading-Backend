@@ -117,6 +117,7 @@ def cal_strategy(request):
 
     option_len = len(list_option)
     last_instrument = option_len - 1
+    before_last_instrument = option_len - 2
     second_last_instrument = option_len - 3
     lot_size = json.loads(r.get("ls_"+parent_symbol))
 
@@ -313,7 +314,8 @@ def cal_strategy(request):
 
                 # Mini Chart
                 if(spot_symbol_type == "PE"):
-                    if j == 1:
+                    if j == 1 and spot_symbol_type == "PE" or\
+                       j == 0 and spot_symbol_type == "PE":
                         mini_chart = {
                             "symbol": spot_symbol_trim,
                             "strike_price": round(spot_price),
@@ -330,7 +332,8 @@ def cal_strategy(request):
                                            .decode("utf-8")
                             }
                             mini_analysis_chart.append(mini_chart)
-                    if j == last_instrument:
+                    if j == last_instrument and spot_symbol_type == "PE" or\
+                       j == before_last_instrument and spot_symbol_type == "PE":
                         mini_chart = {
                             "symbol": spot_symbol_trim,
                             "strike_price": round(spot_price),
@@ -341,16 +344,13 @@ def cal_strategy(request):
 
                     chart = {
                         "symbol": spot_symbol_trim,
-                        "strike_price": spot_price,
+                        "strike_price": round(spot_price),
                         "profit": r.get("pp_"+spot_symbol_trim).decode("utf-8")
                     }
 
                     analysis_chart.append(chart)
 
-    if (premium_paid >= 0):
-        premium_paid = f'Get {premium_paid}'
-    else:
-        premium_paid = f'Pay {abs(round(premium_paid))}'
+    premium_paid = round(premium_paid)
 
     premium_lib.max_loss_numerical_graph.argtypes = [
         c_float]
