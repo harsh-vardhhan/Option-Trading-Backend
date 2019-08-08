@@ -566,8 +566,8 @@ def cache_full_quotes_redis(request):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
                 for expiry_dated in expiry_dates:
-                    expiry_date_fetched = trim_symbol[:len(expiry_dated.upstox_date)]
-                    if(expiry_date_fetched.upper() == expiry_dated.upstox_date):
+                    expiry_date_fetched = trim_symbol[:len(expiry_dated.get("upstox_date"))]
+                    if(expiry_date_fetched.upper() == expiry_dated.get("upstox_date")):
                         q.enqueue(full_quotes_queue, access_token, ops.symbol)
     return Response({"Message": "Quotes Saved"})
 
@@ -593,8 +593,8 @@ def save_full_quotes_db(request):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
                 for expiry_date in expiry_dates:
-                    symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
-                    if (symbol_date.upper() == expiry_date.upstox_date):
+                    symbol_date = trim_symbol[:len(expiry_date.get("upstox_date"))]
+                    if (symbol_date.upper() == expiry_date.get("upstox_date")):
                         symbol_key = r.get(ops.symbol)
                         if (symbol_key is not None):
                             val = symbol_key.decode("utf-8")
