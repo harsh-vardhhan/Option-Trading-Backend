@@ -4,13 +4,13 @@ from app.background_process import live_feed_queue, update_option_queue
 import redis
 import os
 
+symbols = ['nifty', 'banknifty', 'reliance']
 redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 api_key = 'Qj30BLDvL96faWwan42mT45gFHyw1mFs8JxBofdx'
 
 
 def start_subscription():
-    symbols = ['nifty', 'banknifty']
     q = Queue(connection=conn)
     for symbol in symbols:
         for key in r.scan_iter(symbol+"*"):
@@ -20,7 +20,6 @@ def start_subscription():
 
 
 def start_update_option():
-    symbols = ['nifty', 'banknifty']
     q = Queue(connection=conn)
     for symbol in symbols:
         for key in r.scan_iter(symbol+"*"):

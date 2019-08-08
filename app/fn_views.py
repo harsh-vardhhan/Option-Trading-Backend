@@ -3,7 +3,7 @@ from rest_framework.views import Response
 from upstox_api.api import Session, Upstox
 import json
 import itertools as it
-from app.models import Instrument, Full_Quote, Expiry_Date
+from app.models import Instrument, Full_Quote
 from datetime import datetime, date
 import calendar
 from dateutil import relativedelta
@@ -46,21 +46,30 @@ master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
-symbols = ['NIFTY', 'BANKNIFTY']
+symbols = ['NIFTY', 'BANKNIFTY', 'RELIANCE']
 
 # premium_lib = cdll.LoadLibrary("app/premium.so")
 
 premium_lib = cdll.LoadLibrary(os.path.abspath("app/premium.so"))
 # r.flushall()
-# r.set("access_token", "5a545712a2406c77e87ac2da799248baad2c11f7")
+# r.set("access_token", "3da5f8f82568b106b7fc3dc1506c872a49c7a212")
+
+expiry_dates = [{
+    "upstox_date": "19AUG",
+    "expiry_date": str(date(2019, 8, 19)),
+    "label_date": "19 AUG (Monthly)",
+    "future_date": "19AUG"
+}]
 
 
 def save_lot_size():
     r.set("ls_NIFTY", 75)
     r.set("ls_BANKNIFTY", 25)
+    r.set("ls_RELIANCE", 500)
 
 
 save_lot_size()
+
 
 # TODO test in with live data
 @api_view()
@@ -344,8 +353,8 @@ def cal_strategy(request):
 
                     chart = {
                         "symbol": spot_symbol_trim,
-                        "strike_price": round(spot_price),
-                        "profit": r.get("pp_"+spot_symbol_trim).decode("utf-8")
+                        "strike_price": spot_price,
+                        "profit": round(float(r.get("pp_"+spot_symbol_trim).decode("utf-8")))
                     }
 
                     analysis_chart.append(chart)
@@ -395,7 +404,6 @@ def get_access_token(request):
 # change the enitre function into a one time event saved to PostgreSQL
 @api_view(['POST'])
 def save_option(request):
-    store_dates()
 
     def create_session():
         request_data = json.loads(json.dumps(request.data))
@@ -538,7 +546,6 @@ def save_option(request):
 # passed through this should be filtred.
 @api_view(['POST'])
 def cache_full_quotes_redis(request):
-    store_dates()
     request_data = json.loads(json.dumps(request.data))
     access_token = request_data['accessToken']
     list_options = Instrument.objects.all()
@@ -558,7 +565,6 @@ def cache_full_quotes_redis(request):
             if (symbol_fetched.upper() == symbol):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
-                expiry_dates = list(Expiry_Date.objects.all())
                 for expiry_dated in expiry_dates:
                     expiry_date_fetched = trim_symbol[:len(expiry_dated.upstox_date)]
                     if(expiry_date_fetched.upper() == expiry_dated.upstox_date):
@@ -586,7 +592,6 @@ def save_full_quotes_db(request):
             if(symbol_cache.upper() == symbol):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
-                expiry_dates = list(Expiry_Date.objects.all())
                 for expiry_date in expiry_dates:
                     symbol_date = trim_symbol[:len(expiry_date.upstox_date)]
                     if (symbol_date.upper() == expiry_date.upstox_date):
@@ -628,15 +633,6 @@ def get_full_quotes_cache(request, symbol_req, expiry_date_req):
 
     def toJson(func):
         return json.loads(json.dumps(func))
-
-    expiry_dates = []
-    date_one = {
-        "upstox_date": "19AUG",
-        "expiry_date": str(date(2019, 8, 19)),
-        "label_date": "19 AUG (Monthly)",
-        "future_date": "19AUG"
-    }
-    expiry_dates.append(date_one)
 
     # create_session method exclusively while developing in online mode
     '''
@@ -707,18 +703,6 @@ def validate_token(request):
     except:
         return Response({"status": 0})
 
-
-def store_dates():
-    Expiry_Date.objects.all().delete()
-    Expiry_Date(
-        upstox_date="19AUG",
-        expiry_date=str(date(2019, 8, 19)),
-        label_date="19 AUG (Monthly)",
-        future_date="19AUG"
-    ).save()
-    connection.close()
-
-
 @api_view(['POST'])
 def get_full_quotes(request):
 
@@ -730,22 +714,16 @@ def get_full_quotes(request):
     # indices = request_data['indices']
     symbol = request_data['symbol']
     expiry_date = request_data['expiry_date']
-    if (expiry_date == "0"):
-        expiry_date = "19AUG"
 
-    dates = []
-    date_one = {
-        "upstox_date": "19AUG",
-        "expiry_date": str(date(2019, 8, 19)),
-        "label_date": "19 AUG (Monthly)",
-        "future_date": "19AUG"
-    }
-    dates.append(date_one)
+    if (expiry_date == "0"):
+        expiry_date = expiry_dates[0].get("future_date")
+
     '''
     def create_session(request):
         upstox = Upstox(api_key, access_token)
         return upstox
     '''
+
     def pairing():
         list_options = get_full_quotes_cache(request, symbol, expiry_date)
         option_pairs = []
@@ -793,6 +771,7 @@ def get_full_quotes(request):
 
         return option_pairs
     option_pairs = pairing()
+
     return Response({
         "stock_price": r.get("stock_price"+symbol),
         "stock_symbol": r.get("stock_symbol"+symbol),
@@ -804,7 +783,7 @@ def get_full_quotes(request):
         "future": r.get("future_price"+symbol),
         "lot_size": json.loads(r.get("ls_"+symbol)),
         "days_to_expiry": r.get("days_to_expiry"),
-        "expiry_dates": toJson(dates),
+        "expiry_dates": expiry_dates,
         "expiry_date": expiry_date,
         "pcr": r.get("PCR"+symbol+expiry_date),
         "biggest_OI": float(r.get("biggest_OI"+symbol)),

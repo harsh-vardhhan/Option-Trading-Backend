@@ -92,21 +92,23 @@ def timed_job():
     if is_time_between(time(9, 15), time(15, 30)):
         upstox = create_session()
         # values to be iterated
-        symbol_1 = "NIFTY"
-        indices_1 = "NIFTY_50"
 
-        symbol_2 = "BANKNIFTY"
-        indices_2 = "NIFTY_BANK"
+        symbols = [{
+            "symbol": "NIFTY",
+            "indices": "NIFTY_50",
+            "symbol_type": "NSE_INDEX"
+        }, {
+            "symbol": "BANKNIFTY",
+            "indices": "NIFTY_BANK",
+            "symbol_type": "NSE_INDEX"
+        }, {
+            "symbol": "RELIANCE",
+            "indices": "RELIANCE",
+            "symbol_type": "NSE_EQ"
+        }]
 
-        nse_index = 'NSE_INDEX'
         future_date = "19AUG"
         expiry_date = date(2019, 8, 19)
-
-        symbols = []
-        symbol_indices_2 = (symbol_2, indices_2)
-        symbol_indices_1 = (symbol_1, indices_1)
-        symbols.append(symbol_indices_1)
-        symbols.append(symbol_indices_2)
 
         for symbol in symbols:
             today = date.today()
@@ -116,21 +118,21 @@ def timed_job():
 
             upstox.get_master_contract(master_contract_FO)
             future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-                    master_contract_FO, symbol[0]+future_date+'FUT'),
+                    master_contract_FO, symbol.get("symbol") + future_date + 'FUT'),
                     LiveFeedType.Full)
             future_data = json.loads(json.dumps(future))
             future_price = future_data["ltp"]
-            r.set("future_price"+symbol[0], future_price)
+            r.set("future_price"+symbol.get("symbol"), future_price)
 
-            upstox.get_master_contract(nse_index)
+            upstox.get_master_contract(symbol.get("symbol_type"))
             equity = upstox.get_live_feed(upstox.get_instrument_by_symbol(
-                    nse_index, symbol[1]),
+                    symbol.get("symbol_type"), symbol.get("indices")),
                     LiveFeedType.Full)
             equity_data = json.loads(json.dumps(equity))
             equity_price = equity_data["ltp"]
             equity_symbol = equity_data["symbol"]
-            r.set("stock_symbol"+symbol[0], equity_symbol)
-            r.set("stock_price"+symbol[0], equity_price)
+            r.set("stock_symbol"+symbol.get("symbol"), equity_symbol)
+            r.set("stock_price"+symbol.get("symbol"), equity_price)
 
             call_OI = 0.0
             put_OI = 0.0
@@ -143,7 +145,8 @@ def timed_job():
             closest_option = ""
             options_pairs = []
 
-            for a, b in it.combinations(r.scan_iter((symbol[0]).lower()+"*"), 2):
+            for a, b in it.combinations(r.scan_iter((
+                    symbol.get("symbol")).lower()+"*"), 2):
                 instrument_symbol_a = (a).decode('utf-8')
                 instrument_symbol_b = (b).decode('utf-8')
                 instrument_a_strike = json.loads(r.get("s_"+instrument_symbol_a))
@@ -167,7 +170,9 @@ def timed_job():
                     call_OI = call_OI + call_option.get("oi")
                     put_OI = put_OI + put_option.get("oi")
 
-                    diff = abs(float(r.get("stock_price"+symbol[0])) - instrument_a_strike)
+                    diff = abs(float(
+                        r.get("stock_price"+symbol.get("symbol"))) -
+                        instrument_a_strike)
 
                     if(diff < closest_strike):
                         closest_strike = diff
@@ -292,14 +297,14 @@ def timed_job():
                 # print("*******",max_pain_list[i][0] ,max_pain_list[i][4], max_pain_list[i][5])
                 total_loss_pair = (max_pain_list[i][0], total_loss)
                 total_loss_list.append(total_loss_pair)
-            r.set("max_pain"+symbol[0], min(total_loss_list, key=lambda x: x[1])[0])
+            r.set("max_pain"+symbol.get("symbol"), min(total_loss_list, key=lambda x: x[1])[0])
 
             if call_OI == 0.0:
                 call_OI = 1.0
             pcr = round(put_OI/call_OI, 2)
-            r.set("biggest_OI" + symbol[0], biggest_OI)
-            r.set("closest_strike" + symbol[0]+future_date, closest_option)
-            r.set("PCR"+symbol[0] + future_date, pcr)
+            r.set("biggest_OI" + symbol.get("symbol"), biggest_OI)
+            r.set("closest_strike" + symbol.get("symbol")+future_date, closest_option)
+            r.set("PCR" + symbol.get("symbol") + future_date, pcr)
 
 
 sched.start()
