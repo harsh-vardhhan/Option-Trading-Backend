@@ -47,8 +47,7 @@ class Expiry_Date(models.Model):
     future_date = models.CharField(max_length=40)
 
 
-class Chart(models.Model):
-    __slots__ = ['symbol', 'strike_price', 'profit']
-    symbol = models.CharField(max_length=40)
+class Option_Chain(models.Model):
+    call_symbol = models.CharField(max_length=40)
     strike_price = models.FloatField(max_length=40)
-    profit = models.FloatField(max_length=40)
+    put_symbol = models.CharField(max_length=40)

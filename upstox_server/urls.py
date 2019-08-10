@@ -11,7 +11,8 @@ from app.fn_views import (
     subscribe_quotes,
     update_option,
     live_feed,
-    cal_strategy
+    cal_strategy_rewrite,
+    save_option_chain
 )
 
 router = DefaultRouter()
@@ -27,7 +28,8 @@ urlpatterns = [
     path('subscribequotes/', subscribe_quotes),
     path('updateoption/', update_option),
     path('livefeed/', live_feed),
-    path('calstrategy/', cal_strategy)
+    path('calstrategy/', cal_strategy_rewrite),
+    path('saveoptionchain/', save_option_chain)
 ]
 
 urlpatterns += router.urls
