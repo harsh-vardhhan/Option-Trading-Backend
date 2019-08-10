@@ -578,7 +578,9 @@ def cal_strategy_rewrite(request):
 
             # last iteration
             if (i == last_iteration):
+                # fetches the final payoff at each strike
                 max_profit = json.loads(r.get("pp_"+ops.call_symbol[:-2]))
+
                 if (max_profit > max_profit_expiry):
                     max_profit_expiry = max_profit
                     max_profit_numerical = max_profit
@@ -614,13 +616,12 @@ def cal_strategy_rewrite(request):
                         max_loss_expiry = abs(max_loss_expiry)
 
                 # Mini Chart Puts
-                # price = float(r.get("pp_"+spot_symbol_trim).decode("utf-8"))
+                price = r.get("pp_"+spot_symbol_trim).decode("utf-8")
                 if j == 0:
                     mini_chart = {
                         "symbol": spot_symbol_trim,
                         "strike_price": round(spot_price),
-                        "profit": r.get("pp_"+spot_symbol_trim)
-                                   .decode("utf-8")
+                        "profit": price
                     }
                     mini_analysis_chart.append(mini_chart)
                 for strike_symbol in buy_sell_strike:
@@ -628,23 +629,21 @@ def cal_strategy_rewrite(request):
                         mini_chart = {
                             "symbol": spot_symbol_trim,
                             "strike_price": round(spot_price),
-                            "profit": r.get("pp_"+spot_symbol_trim)
-                                       .decode("utf-8")
+                            "profit": price
                         }
                         mini_analysis_chart.append(mini_chart)
                 if j == last_instrument:
                     mini_chart = {
                         "symbol": spot_symbol_trim,
                         "strike_price": round(spot_price),
-                        "profit": r.get("pp_"+spot_symbol_trim)
-                                   .decode("utf-8")
+                        "profit": price
                     }
                     mini_analysis_chart.append(mini_chart)
 
                 chart = {
                     "symbol": spot_symbol_trim,
                     "strike_price": spot_price,
-                    "profit": round(float(r.get("pp_"+spot_symbol_trim).decode("utf-8")))
+                    "profit": round(float(price))
                 }
 
                 analysis_chart.append(chart)
