@@ -186,9 +186,9 @@ def cal_strategy(request):
 
             # Calcualte new premium
             premium_lib.put_premium_spot.argtypes = [
-                c_int, c_int, c_float, c_float, c_float]
+                c_int, c_int, c_float, c_float]
             premium_lib.put_premium_spot.restype = c_float
-            new_premium_paid = premium_lib.call_premium_spot(
+            new_premium_paid = premium_lib.put_premium_spot(
                 Buy_Put,
                 Sell_Put,
                 premium,
