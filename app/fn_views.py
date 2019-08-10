@@ -421,8 +421,7 @@ def cal_strategy_rewrite(request):
 
     option_len = len(list_option)
     last_instrument = option_len - 1
-    before_last_instrument = option_len - 2
-    second_last_instrument = option_len - 3
+    second_last_instrument = option_len - 2
     lot_size = json.loads(r.get("ls_"+parent_symbol))
 
     max_profit_expiry = 0
@@ -503,7 +502,7 @@ def cal_strategy_rewrite(request):
             spot_price = ops.strike_price
             spot_symbol = ops.call_symbol
             spot_symbol_trim = spot_symbol[:-2]
-            spot_symbol_type = spot_symbol[-2:]
+
 
             # enumerate & clear keys holding the returns using symbols
             # when on the first key
@@ -584,7 +583,7 @@ def cal_strategy_rewrite(request):
                     max_profit_expiry = max_profit
                     max_profit_numerical = max_profit
 
-                if (max_profit < max_loss_numerical):
+                if (max_profit < max_loss_expiry):
                     max_loss_expiry = max_profit
 
                 if (j == 0):
