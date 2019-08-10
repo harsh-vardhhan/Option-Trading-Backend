@@ -307,5 +307,5 @@ def timed_job():
             r.set("PCR" + symbol.get("symbol") + future_date, pcr)
 
 
-sched.start()
-# timed_job()
+# sched.start()
+timed_job()
