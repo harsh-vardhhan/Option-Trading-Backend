@@ -48,7 +48,6 @@ nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
 symbols = ['NIFTY', 'BANKNIFTY', 'RELIANCE']
 
-# premium_lib = cdll.LoadLibrary("app/premium.so")
 
 premium_lib = cdll.LoadLibrary(os.path.abspath("app/premium.so"))
 # r.flushall()
@@ -69,6 +68,21 @@ def save_lot_size():
 
 
 save_lot_size()
+
+
+symbols_list = [{
+    "symbol": "NIFTY",
+    "indices": "NIFTY_50",
+    "symbol_type": "NSE_INDEX"
+}, {
+    "symbol": "BANKNIFTY",
+    "indices": "NIFTY_BANK",
+    "symbol_type": "NSE_INDEX"
+}, {
+    "symbol": "RELIANCE",
+    "indices": "RELIANCE",
+    "symbol_type": "NSE_EQ"
+}]
 
 
 # TODO test in with live data
@@ -388,6 +402,7 @@ def cal_strategy(request):
 
 @api_view(['POST'])
 def cal_strategy_rewrite(request):
+    profiler.start()
     request_data = json.loads(json.dumps(request.data))
     symbols = request_data['symbol']
     filtered_symbols = []
@@ -426,7 +441,7 @@ def cal_strategy_rewrite(request):
 
     max_profit_expiry = 0
     max_profit_numerical = 0
-    max_loss_expiry = 100000000000000000000000
+    max_loss_expiry = 10**10
     max_loss_numerical = 0
 
     for i, symbol in enumerate(filtered_symbols):
@@ -993,21 +1008,6 @@ def validate_token(request):
         return Response({"status": 0})
 
 
-symbols_list = [{
-    "symbol": "NIFTY",
-    "indices": "NIFTY_50",
-    "symbol_type": "NSE_INDEX"
-}, {
-    "symbol": "BANKNIFTY",
-    "indices": "NIFTY_BANK",
-    "symbol_type": "NSE_INDEX"
-}, {
-    "symbol": "RELIANCE",
-    "indices": "RELIANCE",
-    "symbol_type": "NSE_EQ"
-}]
-
-
 @api_view()
 def save_option_chain(request):
     Option_Chain.objects.all().delete()
@@ -1031,6 +1031,7 @@ def save_option_chain(request):
                     ).save()
     return Response({"Hello": "world"})
 
+
 @api_view(['POST'])
 def get_full_quotes(request):
 
@@ -1052,6 +1053,9 @@ def get_full_quotes(request):
         return upstox
     '''
 
+    def to_lakh(n):
+        return float(round(n/100000, 1))
+
     def pairing():
         list_options = get_full_quotes_cache(symbol, expiry_date)
         option_pairs = []
@@ -1064,38 +1068,39 @@ def get_full_quotes(request):
         for a, b in it.combinations(list_options, 2):
             if (a.get("strike_price") == b.get("strike_price")):
                 # arrange option pair always in CE and PE order
+                if to_lakh(a.get("oi")) > 0 and to_lakh(b.get("oi")) > 0:
 
-                trimmed_symbol = (a.get("symbol").lower())[:-2]
-                if r.get("g_"+trimmed_symbol) is not None:
+                    trimmed_symbol = (a.get("symbol").lower())[:-2]
+                    if r.get("g_"+trimmed_symbol) is not None:
 
-                    gamma = r.get("g_"+trimmed_symbol).decode('utf-8')
-                    vega = r.get("v_"+trimmed_symbol).decode('utf-8')
-                    iv = r.get("iv_" + trimmed_symbol).decode("utf-8")
+                        gamma = r.get("g_"+trimmed_symbol).decode('utf-8')
+                        vega = r.get("v_"+trimmed_symbol).decode('utf-8')
+                        iv = r.get("iv_" + trimmed_symbol).decode("utf-8")
 
-                    if (a.get("symbol")[-2:] == 'CE'):
-                        delta_call = r.get("dc_"+trimmed_symbol)\
-                                      .decode('utf-8')
-                        theta_call = r.get("tc_"+trimmed_symbol)\
-                                      .decode('utf-8')
-                        option_pair = (a, b, a.get("strike_price"), iv,
-                                       gamma,
-                                       vega,
-                                       delta_call,
-                                       theta_call,
-                                       delta_put,
-                                       theta_put)
-                        option_pairs.append(option_pair)
-                    else:
-                        delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
-                        theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
-                        option_pair = (b, a, a.get("strike_price"), iv,
-                                       gamma,
-                                       vega,
-                                       delta_call,
-                                       theta_call,
-                                       delta_put,
-                                       theta_put)
-                        option_pairs.append(option_pair)
+                        if (a.get("symbol")[-2:] == 'CE'):
+                            delta_call = r.get("dc_"+trimmed_symbol)\
+                                          .decode('utf-8')
+                            theta_call = r.get("tc_"+trimmed_symbol)\
+                                          .decode('utf-8')
+                            option_pair = (a, b, a.get("strike_price"), iv,
+                                           gamma,
+                                           vega,
+                                           delta_call,
+                                           theta_call,
+                                           delta_put,
+                                           theta_put)
+                            option_pairs.append(option_pair)
+                        else:
+                            delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
+                            theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
+                            option_pair = (b, a, a.get("strike_price"), iv,
+                                           gamma,
+                                           vega,
+                                           delta_call,
+                                           theta_call,
+                                           delta_put,
+                                           theta_put)
+                            option_pairs.append(option_pair)
 
         return option_pairs
     option_pairs = pairing()
