@@ -402,7 +402,6 @@ def cal_strategy(request):
 
 @api_view(['POST'])
 def cal_strategy_rewrite(request):
-    profiler.start()
     request_data = json.loads(json.dumps(request.data))
     symbols = request_data['symbol']
     filtered_symbols = []
