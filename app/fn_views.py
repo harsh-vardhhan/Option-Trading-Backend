@@ -795,7 +795,6 @@ def get_full_quotes(request):
                         iv = r.get("iv_" + trimmed_symbol).decode("utf-8")
 
                         if (a.get("symbol")[-2:] == 'CE'):
-                            print(a.get("symbol"))
                             delta_call = r.get("dc_"+trimmed_symbol)\
                                           .decode('utf-8')
                             theta_call = r.get("tc_"+trimmed_symbol)\
@@ -809,7 +808,6 @@ def get_full_quotes(request):
                                            theta_put)
                             option_pairs.append(option_pair)
                         else:
-                            print(a.get("symbol"))
                             delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
                             theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
                             option_pair = (b, a, a.get("strike_price"), iv,
