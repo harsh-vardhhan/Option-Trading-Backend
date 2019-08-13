@@ -46,29 +46,11 @@ master_contract_FO = 'NSE_FO'
 master_contract_EQ = 'NSE_EQ'
 nse_index = 'NSE_INDEX'
 niftyit = 'niftyit'
-symbols = ['NIFTY', 'BANKNIFTY', 'RELIANCE']
 
 
 premium_lib = cdll.LoadLibrary(os.path.abspath("app/premium.so"))
 # r.flushall()
-# r.set("access_token", "3da5f8f82568b106b7fc3dc1506c872a49c7a212")
-
-expiry_dates = [{
-    "upstox_date": "19AUG",
-    "expiry_date": str(date(2019, 8, 19)),
-    "label_date": "19 AUG (Monthly)",
-    "future_date": "19AUG"
-}]
-
-
-def save_lot_size():
-    r.set("ls_NIFTY", 75)
-    r.set("ls_BANKNIFTY", 25)
-    r.set("ls_RELIANCE", 500)
-
-
-save_lot_size()
-
+# r.set("access_token", "f453c45be476ca5fef98bbb5c95032e4505eb99e")
 
 symbols_list = [{
     "symbol": "NIFTY",
@@ -83,6 +65,22 @@ symbols_list = [{
     "indices": "RELIANCE",
     "symbol_type": "NSE_EQ"
 }]
+
+expiry_dates = [{
+    "upstox_date": "19AUG",
+    "expiry_date": date(2019, 8, 29),
+    "label_date": "19 AUG (Monthly)",
+    "future_date": "19AUG"
+}]
+
+
+def save_lot_size():
+    r.set("ls_NIFTY", 75)
+    r.set("ls_BANKNIFTY", 25)
+    r.set("ls_RELIANCE", 500)
+
+
+save_lot_size()
 
 
 # TODO test in with live data
@@ -117,287 +115,6 @@ def get_redirect_url(request):
     url = session.get_login_url()
     print(url)
     return Response({"url": url})
-
-
-@api_view(['POST'])
-def cal_strategy(request):
-    request_data = json.loads(json.dumps(request.data))
-    symbols = request_data['symbol']
-    parent_symbol = request_data['parent_symbol']
-    max_profit_expiry = 0
-    max_loss_expiry = 0
-    symbol_len = len(symbols)
-    last_iteration = symbol_len - 1
-    premium_paid = 0
-    analysis_chart = []
-    mini_analysis_chart = []
-    buy_sell_strike = []
-    list_option = Full_Quote.objects\
-                            .all()\
-                            .filter(symbol__startswith=parent_symbol)\
-                            .order_by('strike_price')
-    connection.close()
-
-    option_len = len(list_option)
-    last_instrument = option_len - 1
-    before_last_instrument = option_len - 2
-    second_last_instrument = option_len - 3
-    lot_size = json.loads(r.get("ls_"+parent_symbol))
-
-    max_profit_expiry = 0
-    max_profit_numerical = 0
-    max_loss_expiry = 100000000000000000000000
-    max_loss_numerical = 0
-
-    for i, symbol in enumerate(symbols):
-
-        second_last = 0
-        last = 0
-        first = 0
-        second = 0
-
-        Buy_Call = symbol[0].get("Buy")
-        Sell_Call = symbol[0].get("Sell")
-        Buy_Put = symbol[1].get("Buy")
-        Sell_Put = symbol[1].get("Sell")
-        Call_Symbol = symbol[0].get("symbol").lower()
-        Put_Symbol = symbol[1].get("symbol").lower()
-        Call_Symbol_Strike = symbol[0].get("symbol")[:-2]
-        Put_Symbol_Strike = symbol[1].get("symbol")[:-2]
-
-        # calculate premium for current spot price
-        if(Buy_Call is not None and Buy_Call != 0
-           or Sell_Call is not None and Sell_Call != 0):
-            instrument = json.loads(r.get((symbol[0].get("symbol").lower())))
-            premium = instrument.get('ltp')
-
-            buy_sell_strike.append(Call_Symbol_Strike)
-
-            # Calcualte new premium
-            premium_lib.call_premium_spot.argtypes = [
-                c_int, c_int, c_float, c_float]
-            premium_lib.call_premium_spot.restype = c_float
-            new_premium_paid = premium_lib.call_premium_spot(
-                Buy_Call,
-                Sell_Call,
-                premium,
-                lot_size)
-
-            # Add to previous premium
-            premium_lib.premium_paid.argtypes = [
-                c_float, c_float]
-            premium_lib.premium_paid.restype = c_float
-            premium_paid = premium_lib.premium_paid(
-                premium_paid,
-                new_premium_paid)
-
-        if(Buy_Put is not None and Buy_Put != 0
-           or Sell_Put is not None and Sell_Put != 0):
-            instrument = json.loads(r.get((symbol[1].get("symbol").lower())))
-            premium = instrument.get('ltp')
-
-            buy_sell_strike.append(Put_Symbol_Strike)
-
-            # Calcualte new premium
-            premium_lib.put_premium_spot.argtypes = [
-                c_int, c_int, c_float, c_float]
-            premium_lib.put_premium_spot.restype = c_float
-            new_premium_paid = premium_lib.put_premium_spot(
-                Buy_Put,
-                Sell_Put,
-                premium,
-                lot_size)
-
-            # Add to previous premium
-            premium_lib.premium_paid.argtypes = [
-                c_float, c_float]
-            premium_lib.premium_paid.restype = c_float
-            premium_paid = premium_lib.premium_paid(
-                premium_paid,
-                new_premium_paid)
-
-        # treat every strike as a spot price
-        for j, ops in enumerate(list_option):
-
-            spot_price = ops.strike_price
-            spot_symbol = ops.symbol
-            spot_symbol_trim = spot_symbol[:-2]
-            spot_symbol_type = spot_symbol[-2:]
-
-            # enumerate & clear keys holding the returns using symbols
-            # when on the first key
-            if (i == 0):
-                r.set("pp_"+spot_symbol_trim, 0)
-
-            if(Buy_Call is not None and Buy_Call != 0
-               or Sell_Call is not None and Sell_Call != 0):
-
-                instrument = json.loads(r.get((Call_Symbol)))
-                premium = instrument.get('ltp')
-                strike_price = json.loads(r.get(("s_"+Call_Symbol)))
-
-                # Calls
-                if(spot_symbol_type == "CE"):
-                    premium_lib.call_premium.argtypes = [
-                        c_int, c_int, c_float, c_float, c_float, c_float]
-                    premium_lib.call_premium.restype = c_float
-                    max_return = premium_lib.call_premium(
-                        Buy_Call,
-                        Sell_Call,
-                        spot_price,
-                        strike_price,
-                        premium,
-                        lot_size)
-
-                    if (r.get("pp_"+spot_symbol_trim) is None):
-                        r.set("pp_"+spot_symbol_trim, max_return)
-                    else:
-                        old_max_return = json.loads(
-                            r.get("pp_"+spot_symbol_trim))
-
-                        premium_lib.new_max_return.argtypes = [
-                            c_float, c_float]
-                        premium_lib.new_max_return.restype = c_float
-                        new_max_return = premium_lib.new_max_return(
-                            max_return,
-                            old_max_return)
-
-                        r.set("pp_"+spot_symbol_trim, new_max_return)
-
-            if(Buy_Put is not None and Buy_Put != 0
-               or Sell_Put is not None and Sell_Put != 0):
-
-                instrument = json.loads(r.get((Put_Symbol)))
-                premium = instrument.get('ltp')
-                strike_price = json.loads(r.get(("s_"+Put_Symbol)))
-
-                # Puts
-                if(spot_symbol_type == "PE"):
-                    premium_lib.put_premium.argtypes = [
-                        c_int, c_int, c_float, c_float, c_float, c_float]
-                    premium_lib.put_premium.restype = c_float
-                    max_return = premium_lib.put_premium(
-                        Buy_Put,
-                        Sell_Put,
-                        spot_price,
-                        strike_price,
-                        premium,
-                        lot_size)
-
-                    if (r.get("pp_"+spot_symbol_trim) is None):
-                        r.set("pp_"+spot_symbol_trim, max_return)
-                    else:
-                        old_max_return = json.loads(
-                            r.get("pp_" + spot_symbol_trim))
-
-                        premium_lib.new_max_return.argtypes = [
-                            c_float, c_float]
-                        premium_lib.new_max_return.restype = c_float
-                        new_max_return = premium_lib.new_max_return(
-                            max_return,
-                            old_max_return)
-                        r.set("pp_"+spot_symbol_trim, new_max_return)
-
-            # last iteration
-            if (i == last_iteration):
-                max_profit = json.loads(r.get("pp_"+ops.symbol[:-2]))
-                if (max_profit > max_profit_expiry):
-                    max_profit_expiry = max_profit
-                    max_profit_numerical = max_profit
-
-                if (max_profit < max_loss_expiry):
-                    max_loss_expiry = max_profit
-
-                if (j == 0):
-                    first = max_profit
-                if (j == 1):
-                    second = max_profit
-                    if(first > second):
-                        max_loss_expiry = "Unlimited"
-
-                if (j == second_last_instrument):
-                    second_last = max_profit
-                if (j == last_instrument):
-                    last = max_profit
-                    if(last > second_last):
-                        max_profit_expiry = "Unlimited"
-                        max_profit_numerical = last
-                    elif(last < second_last):
-                        max_loss_expiry = "Unlimited"
-                        max_loss_numerical = last
-                    if(isinstance(max_profit_expiry, float)):
-                        max_profit_expiry = round(max_profit_expiry, 0)
-                        max_profit_numerical = round(max_profit_expiry, 0)
-                    if(isinstance(max_loss_expiry, float)):
-                        max_loss_numerical = round(max_loss_expiry, 0)
-                        max_loss_expiry = abs(round(max_loss_expiry, 0))
-                    elif(isinstance(max_loss_expiry, int)):
-                        max_loss_numerical = round(max_loss_expiry, 0)
-                        max_loss_expiry = abs(max_loss_expiry)
-
-                # Mini Chart
-                if(spot_symbol_type == "PE"):
-                    if j == 1 and spot_symbol_type == "PE" or\
-                       j == 0 and spot_symbol_type == "PE":
-                        mini_chart = {
-                            "symbol": spot_symbol_trim,
-                            "strike_price": round(spot_price),
-                            "profit": r.get("pp_"+spot_symbol_trim)
-                                       .decode("utf-8")
-                        }
-                        mini_analysis_chart.append(mini_chart)
-                    for strike_symbol in buy_sell_strike:
-                        if (spot_symbol_trim == strike_symbol):
-                            mini_chart = {
-                                "symbol": spot_symbol_trim,
-                                "strike_price": round(spot_price),
-                                "profit": r.get("pp_"+spot_symbol_trim)
-                                           .decode("utf-8")
-                            }
-                            mini_analysis_chart.append(mini_chart)
-                    if j == last_instrument and spot_symbol_type == "PE" or\
-                       j == before_last_instrument and spot_symbol_type == "PE":
-                        mini_chart = {
-                            "symbol": spot_symbol_trim,
-                            "strike_price": round(spot_price),
-                            "profit": r.get("pp_"+spot_symbol_trim)
-                                       .decode("utf-8")
-                        }
-                        mini_analysis_chart.append(mini_chart)
-
-                    chart = {
-                        "symbol": spot_symbol_trim,
-                        "strike_price": spot_price,
-                        "profit": round(float(r.get("pp_"+spot_symbol_trim).decode("utf-8")))
-                    }
-
-                    analysis_chart.append(chart)
-
-    premium_paid = round(premium_paid)
-
-    premium_lib.max_loss_numerical_graph.argtypes = [
-        c_float]
-    premium_lib.max_loss_numerical_graph.restype = c_float
-    max_loss_numerical_graph = premium_lib.max_loss_numerical_graph(
-        max_loss_numerical)
-
-    premium_lib.max_profit_numerical_graph.argtypes = [
-        c_float]
-    premium_lib.max_profit_numerical_graph.restype = c_float
-    max_profit_numerical_graph = premium_lib.max_profit_numerical_graph(
-        max_profit_numerical)
-
-    return Response({
-        "max_profit_expiry": max_profit_expiry,
-        "max_loss_expiry": max_loss_expiry,
-        "max_profit_numerical": max_profit_numerical,
-        "max_loss_numerical": max_loss_numerical,
-        "max_loss_numerical_graph": max_loss_numerical_graph,
-        "max_profit_numerical_graph": max_profit_numerical_graph,
-        "premium": premium_paid,
-        "chart": analysis_chart,
-        "mini_chart": mini_analysis_chart
-    })
 
 
 @api_view(['POST'])
@@ -741,8 +458,8 @@ def save_option(request):
         # Creating Python Objects of all options
         all_options = []
         Instrument.objects.all().delete()
-        for symbol in symbols:
-            for ops in search_options(symbol):
+        for symbol in symbols_list:
+            for ops in search_options(symbol.get("symbol")):
                 expiry = int(ops[6])
                 exchange_val = ops[0]
                 token_val = ops[1]
@@ -806,10 +523,10 @@ def save_option(request):
                                         ops[5], ops[6], ops[7], ops[8], ops[9],
                                         ops[10], ops[11]
                                     ))
-                            if symbol == "NIFTY":
-                                symbol_len = len(symbol)
+                            if symbol.get("symbol") == "NIFTY":
+                                symbol_len = len(symbol.get("symbol"))
                                 symbol_cache = symbol_val[:symbol_len]
-                                if symbol == symbol_cache.upper():
+                                if symbol.get("symbol") == symbol_cache.upper():
                                     save_option_db(
                                         expiry,
                                         exchange_val,
@@ -860,12 +577,12 @@ def cache_full_quotes_redis(request):
     upstox = create_session(access_token)
     upstox.get_master_contract(master_contract_FO)
     # symbol = request_data['symbol']
-    for symbol in symbols:
-        symbol_len = len(symbol)
+    for symbol in symbols_list:
+        symbol_len = len(symbol.get("symbol"))
         for ops in list_options:
             # This has been done to differentiate between NIFTY and BANKNIFTY
             symbol_fetched = ops.symbol[:symbol_len]
-            if (symbol_fetched.upper() == symbol):
+            if (symbol_fetched.upper() == symbol.get("symbol")):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
                 for expiry_dated in expiry_dates:
@@ -887,12 +604,12 @@ def save_full_quotes_db(request):
         return upstox
     list_option = Instrument.objects.all()
     Full_Quote.objects.all().delete()
-    for symbol in symbols:
+    for symbol in symbols_list:
         for ops in list_option:
             # This has been done to differentiate between NIFTY and BANKNIFTY
-            symbol_len = len(symbol)
+            symbol_len = len(symbol.get("symbol"))
             symbol_cache = ops.symbol[:symbol_len]
-            if(symbol_cache.upper() == symbol):
+            if(symbol_cache.upper() == symbol.get("symbol")):
                 # This is to fetch Monthly Options only
                 trim_symbol = ops.symbol[symbol_len:]
                 for expiry_date in expiry_dates:
@@ -934,6 +651,7 @@ def save_full_quotes_db(request):
 # TODO Perform IV Calculations here
 def get_full_quotes_cache(symbol_req, expiry_date_req):
 
+    # r.flushall()
     def toJson(func):
         return json.loads(json.dumps(func))
 
@@ -1077,6 +795,7 @@ def get_full_quotes(request):
                         iv = r.get("iv_" + trimmed_symbol).decode("utf-8")
 
                         if (a.get("symbol")[-2:] == 'CE'):
+                            print(a.get("symbol"))
                             delta_call = r.get("dc_"+trimmed_symbol)\
                                           .decode('utf-8')
                             theta_call = r.get("tc_"+trimmed_symbol)\
@@ -1090,6 +809,7 @@ def get_full_quotes(request):
                                            theta_put)
                             option_pairs.append(option_pair)
                         else:
+                            print(a.get("symbol"))
                             delta_put = r.get("dp_"+trimmed_symbol).decode('utf-8')
                             theta_put = r.get("tp_"+trimmed_symbol).decode('utf-8')
                             option_pair = (b, a, a.get("strike_price"), iv,

@@ -20,8 +20,29 @@ redis_url = os.getenv('REDISTOGO_URL', 'redis://localhost:6379')
 r = redis.from_url(redis_url)
 
 # NOTE token r.set only in DEV mode
-# r.set("access_token", "cf39b26f37f0978fe8b6b9c5904174fc3a56b355")
+# r.set("access_token", "d558bcfdbfcc7ce7ca45885af1003b1de0c8ef05")
 access_token = r.get("access_token").decode("utf-8")
+
+expiry_dates = [{
+    "upstox_date": "19AUG",
+    "expiry_date": date(2019, 8, 29),
+    "label_date": "19 AUG (Monthly)",
+    "future_date": "19AUG"
+}]
+
+symbols = [{
+    "symbol": "NIFTY",
+    "indices": "NIFTY_50",
+    "symbol_type": "NSE_INDEX"
+}, {
+    "symbol": "BANKNIFTY",
+    "indices": "NIFTY_BANK",
+    "symbol_type": "NSE_INDEX"
+}, {
+    "symbol": "RELIANCE",
+    "indices": "RELIANCE",
+    "symbol_type": "NSE_EQ"
+}]
 
 
 def is_time_between(begin_time, end_time, check_time=None):
@@ -93,28 +114,15 @@ def timed_job():
         upstox = create_session()
         # values to be iterated
 
-        symbols = [{
-            "symbol": "NIFTY",
-            "indices": "NIFTY_50",
-            "symbol_type": "NSE_INDEX"
-        }, {
-            "symbol": "BANKNIFTY",
-            "indices": "NIFTY_BANK",
-            "symbol_type": "NSE_INDEX"
-        }, {
-            "symbol": "RELIANCE",
-            "indices": "RELIANCE",
-            "symbol_type": "NSE_EQ"
-        }]
-
         future_date = "19AUG"
-        expiry_date = date(2019, 8, 19)
+        # NOTE: hard coded date
+        expiry_date = expiry_dates[0].get("expiry_date")
 
         for symbol in symbols:
             today = date.today()
             days_to_expiry = expiry_date - today
             r.set("days_to_expiry", days_to_expiry.days)
-            time_to_maturity = (days_to_expiry.days)/365
+            time_to_maturity = days_to_expiry.days / 365
 
             upstox.get_master_contract(master_contract_FO)
             future = upstox.get_live_feed(upstox.get_instrument_by_symbol(
@@ -184,7 +192,7 @@ def timed_job():
                     if(to_lakh(put_option.get("oi")) > biggest_OI):
                         biggest_OI = to_lakh(put_option.get("oi"))
 
-                    if (instrument_a_strike < equity_price):
+                    if (instrument_a_strike > equity_price):
                         iv = cal_iv(
                                 future_price,
                                 instrument_a_strike,
@@ -197,7 +205,7 @@ def timed_job():
                                 )
                         r.set("iv_"+instrument_symbol_a[:-2], iv)
 
-                    if (instrument_a_strike > equity_price):
+                    if (instrument_a_strike < equity_price):
                         iv = cal_iv(
                                 future_price,
                                 instrument_a_strike,
@@ -210,8 +218,6 @@ def timed_job():
                                 )
 
                         r.set("iv_"+instrument_symbol_a[:-2], iv)
-                    if (iv == 0):
-                        iv = 10
 
                     Delta_call, Gamma, Vega, Theta_call = Greeks_call(
                             future_price,
@@ -307,5 +313,5 @@ def timed_job():
             r.set("PCR" + symbol.get("symbol") + future_date, pcr)
 
 
-# sched.start()
-timed_job()
+sched.start()
+# timed_job()
