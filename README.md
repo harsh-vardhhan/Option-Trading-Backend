@@ -1,4 +1,4 @@
-## Option Trading Platform 
+## Option Trading Platform (Backend) 
 
 ### Option trading platform using Upstox API's which uses
 - Celery for backroung work
