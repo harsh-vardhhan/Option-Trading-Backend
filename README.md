@@ -1,7 +1,7 @@
 ## Option Trading Platform (Backend) 
 
 ### Option trading platform using Upstox API's which uses
-- Celery for backroung work
+- Celery for backround work
 - Redis for temporary store
 - PostreSQL for database
 - Ctypes for Faster calculation
